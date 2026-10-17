@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:tt="https://teamtailor.com/locations">
+  <channel>
+    <title>Acme AI</title>
+    <description>Join us</description>
+    <link>https://acme.teamtailor.com/jobs</link>
+    <item>
+      <title>Machine Learning Engineer</title>
+      <description>&lt;p&gt;Train &lt;b&gt;models&lt;/b&gt; &amp;amp; ship them.&lt;/p&gt;</description>
+      <pubDate>Tue, 07 Oct 2026 06:32:08 +0000</pubDate>
+      <link>https://acme.teamtailor.com/jobs/111-machine-learning-engineer</link>
+      <guid>111</guid>
+      <remoteStatus>fully</remoteStatus>
+      <tt:locations>
+        <tt:location>
+          <tt:name>Amsterdam HQ</tt:name>
+          <tt:city>Amsterdam</tt:city>
+          <tt:country>Netherlands</tt:country>
+        </tt:location>
+        <tt:location>
+          <tt:name>Ghent</tt:name>
+          <tt:city>Gand</tt:city>
+          <tt:country>Belgium</tt:country>
+        </tt:location>
+      </tt:locations>
+    </item>
+    <item>
+      <title>Office Manager</title>
+      <description>&lt;p&gt;Keep things running.&lt;/p&gt;</description>
+      <pubDate>Mon, 06 Oct 2026 10:00:00 +0000</pubDate>
+      <link>https://acme.teamtailor.com/jobs/112-office-manager</link>
+      <guid>112</guid>
+      <remoteStatus>none</remoteStatus>
+    </item>
+  </channel>
+</rss>

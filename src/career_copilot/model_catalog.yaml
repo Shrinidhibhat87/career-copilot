@@ -1,0 +1,82 @@
+# Curated OpenRouter models per role (spec 014). Each role's picker lists these first.
+#   recommended: the Cloud preset's pick. Exactly one per role.
+#   challenger:  worth comparing with `eval models`.
+#   baseline:    the Gemini 2.5 setup, kept for rollback.
+# Prices are never stored here: the picker reads them live, so a stale one never shows.
+# `caps` are the OpenRouter `supported_parameters` that matter to the gate; the live list
+# wins when the two disagree. The defaults are provisional until the eval has run.
+models:
+  - id: deepseek/deepseek-v4-flash-0731
+    roles: [triage]
+    tier: recommended
+    caps: [tools, response_format, structured_outputs]
+    note: "Input about 1/20 of Gemini 2.5 Flash. The high-volume pass."
+
+  - id: google/gemini-3.8-flash
+    roles: [match, discovery]
+    tier: recommended
+    caps: [tools, response_format, structured_outputs]
+    note: "Costs more than 2.5 Flash; used where judgement decides quality."
+
+  - id: google/gemini-2.5-flash
+    roles: [profiler, curator]
+    tier: recommended
+    caps: [tools, response_format, structured_outputs]
+    note: "Cheap and reliable for short structured answers and tool calls."
+
+  - id: anthropic/claude-haiku-4.5
+    roles: [assistant]
+    tier: recommended
+    caps: [tools, response_format, structured_outputs]
+    note: "Calls tools when asked rather than answering that it did."
+
+  # Challengers.
+  - id: google/gemini-2.5-flash
+    roles: [triage]
+    tier: challenger
+    caps: [tools, response_format, structured_outputs]
+    note: "The previous triage model; about 20x the input price of DeepSeek V4 Flash."
+
+  - id: typesafe/jev-router
+    roles: [triage]
+    tier: challenger
+    caps: [tools, response_format, structured_outputs]
+    reserve_eur: 0.05
+    note: "TypeSafe's router. Priced per call after the fact, so a reserve is set."
+
+  - id: anthropic/claude-sonnet-5.5
+    roles: [match, assistant]
+    tier: challenger
+    caps: [tools, response_format, structured_outputs]
+    note: "Strongest reasoning in the list; the most expensive."
+
+  - id: google/gemini-2.5-pro
+    roles: [match]
+    tier: challenger
+    caps: [tools, response_format, structured_outputs]
+    note: "The previous match model."
+
+  - id: google/gemini-3.8-flash
+    roles: [profiler, assistant]
+    tier: challenger
+    caps: [tools, response_format, structured_outputs]
+    note: "Newer Flash; worth it only if the eval shows a gain."
+
+  - id: anthropic/claude-haiku-4.5
+    roles: [curator, discovery]
+    tier: challenger
+    caps: [tools, response_format, structured_outputs]
+    note: "Careful tool use; costs more than the Flash models."
+
+  # Baselines: the Gemini 2.5 setup before the catalog.
+  - id: google/gemini-2.5-flash
+    roles: [triage, profiler, curator, assistant, discovery]
+    tier: baseline
+    caps: [tools, response_format, structured_outputs]
+    note: "Gemini 2.5 setup, for rollback."
+
+  - id: google/gemini-2.5-pro
+    roles: [match]
+    tier: baseline
+    caps: [tools, response_format, structured_outputs]
+    note: "Gemini 2.5 setup, for rollback."

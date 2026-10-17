@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workzag-jobs>
+<position>
+    <id>1001</id>
+    <subcompany>Acme Robotics GmbH</subcompany>
+    <office>Berlin</office>
+    <department>Engineering</department>
+    <name>Senior Data Engineer (m/w/d)</name>
+    <jobDescriptions>
+        <jobDescription>
+            <name>What you do</name>
+            <value><![CDATA[Build <b>pipelines</b> &amp; models for our fleet.]]></value>
+        </jobDescription>
+        <jobDescription>
+            <name>Who you are</name>
+            <value><![CDATA[<ul><li>5+ years of Python</li></ul>]]></value>
+        </jobDescription>
+    </jobDescriptions>
+    <employmentType>permanent</employmentType>
+    <schedule>full-time</schedule>
+    <createdAt>2026-08-17T09:11:14+00:00</createdAt>
+</position>
+<position>
+    <id>1002</id>
+    <office>Munich</office>
+    <name>Working Student</name>
+    <jobDescriptions></jobDescriptions>
+    <schedule>part-time</schedule>
+    <createdAt>2026-06-26T18:07:01+00:00</createdAt>
+</position>
+</workzag-jobs>

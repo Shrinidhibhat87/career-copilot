@@ -1,0 +1,30 @@
+{
+  "name": "Acme Labs",
+  "description": "We build things",
+  "jobs": [
+    {
+      "title": "Backend Engineer",
+      "shortcode": "ABC123",
+      "employment_type": "Full-time",
+      "telecommuting": true,
+      "department": "Engineering",
+      "url": "https://apply.workable.com/j/ABC123",
+      "shortlink": "https://apply.workable.com/j/ABC123",
+      "published_on": "2026-10-01",
+      "city": "Berlin",
+      "country": "Germany",
+      "description": "<p>Own our <b>APIs</b> &amp; data layer.</p>"
+    },
+    {
+      "title": "Recruiter",
+      "shortcode": "DEF456",
+      "employment_type": "Part-time",
+      "telecommuting": false,
+      "url": "https://apply.workable.com/j/DEF456",
+      "published_on": "2026-09-20",
+      "city": "Munich",
+      "country": "Germany",
+      "description": "<p>Hire great people.</p>"
+    }
+  ]
+}

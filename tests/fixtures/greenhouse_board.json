@@ -1,0 +1,23 @@
+{
+  "jobs": [
+    {
+      "id": 4512345,
+      "title": "Forward Deployed Engineer (m/w/d)",
+      "updated_at": "2026-08-01T10:15:00-04:00",
+      "location": { "name": "Berlin, Germany" },
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/4512345?gh_src=abc",
+      "company_name": "Acme GmbH",
+      "content": "&lt;p&gt;You will work &lt;strong&gt;directly&lt;/strong&gt; with customers.&lt;/p&gt;&lt;p&gt;German is a plus.&lt;/p&gt;"
+    },
+    {
+      "id": 4512346,
+      "title": "Head of Platform",
+      "updated_at": "2026-07-28T08:00:00-04:00",
+      "location": { "name": "Munich, Germany" },
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/4512346",
+      "company_name": "Acme GmbH",
+      "content": "&lt;p&gt;Lead the platform org.&lt;/p&gt;"
+    }
+  ],
+  "meta": { "total": 2 }
+}

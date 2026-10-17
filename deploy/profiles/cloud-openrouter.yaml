@@ -1,0 +1,15 @@
+# Every role on OpenRouter: the catalog's `recommended` entries
+# (src/career_copilot/model_catalog.yaml). Chosen by the Cloud preset on the Settings page,
+# or by CAREER_COPILOT_PROFILE=cloud-openrouter. Needs an OpenRouter key (spec 014).
+# Every role is set explicitly, so none falls back to the triage model.
+# Keep in step with the catalog: tests/unit/test_model_catalog.py fails when they differ.
+models:
+  backends:
+    openrouter: {kind: openrouter}
+  roles:
+    triage:    {backend: openrouter, model: deepseek/deepseek-v4-flash-0731, max_output_tokens: 256}
+    match:     {backend: openrouter, model: google/gemini-3.8-flash, max_output_tokens: 1024}
+    profiler:  {backend: openrouter, model: google/gemini-2.5-flash, max_output_tokens: 1024}
+    curator:   {backend: openrouter, model: google/gemini-2.5-flash, max_output_tokens: 1024}
+    assistant: {backend: openrouter, model: anthropic/claude-haiku-4.5, max_output_tokens: 1024}
+    discovery: {backend: openrouter, model: google/gemini-3.8-flash, max_output_tokens: 1024}

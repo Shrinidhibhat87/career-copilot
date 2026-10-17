@@ -1,0 +1,11 @@
+{
+  "id": "744000000000001",
+  "postingUrl": "https://jobs.smartrecruiters.com/AcmeLab/744000000000001-research-engineer",
+  "jobAd": {
+    "sections": {
+      "companyDescription": {"title": "Company", "text": "<p>We study <b>physics</b>.</p>"},
+      "jobDescription": {"title": "Job Description", "text": "<p>Build detectors &amp; software.</p>"},
+      "qualifications": {"title": "Qualifications", "text": "<ul><li>MSc</li></ul>"}
+    }
+  }
+}

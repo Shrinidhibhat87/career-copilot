@@ -1,0 +1,25 @@
+{
+  "apiVersion": "1",
+  "jobs": [
+    {
+      "id": "594e7ab1-3c77-43b5-be3f-bc30d513c14c",
+      "title": "Forward Deployed Engineer",
+      "location": "Berlin",
+      "employmentType": "FullTime",
+      "isRemote": false,
+      "publishedAt": "2026-09-01T10:00:00.000Z",
+      "jobUrl": "https://jobs.ashbyhq.com/taktile/594e7ab1-3c77-43b5-be3f-bc30d513c14c",
+      "descriptionPlain": "Work with customers to deploy Taktile's decision platform. Python, APIs, ML."
+    },
+    {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "title": "Account Executive",
+      "location": "London",
+      "employmentType": "FullTime",
+      "isRemote": false,
+      "publishedAt": "2026-09-02T10:00:00.000Z",
+      "jobUrl": "https://jobs.ashbyhq.com/taktile/11111111-2222-3333-4444-555555555555",
+      "descriptionPlain": "Sell the platform."
+    }
+  ]
+}

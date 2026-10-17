@@ -1,0 +1,41 @@
+{
+  "offers": [
+    {
+      "id": 2771667,
+      "title": "Platform Engineer",
+      "company_name": "Acme Bank",
+      "city": "Amsterdam",
+      "country": "Netherlands",
+      "location": "Amsterdam, Noord-Holland, Netherlands",
+      "description": "<p>Run our <b>platform</b>.</p>",
+      "requirements": "<ul><li>Kubernetes</li></ul>",
+      "careers_url": "https://careers.acme.example/o/platform-engineer",
+      "published_at": "2026-10-05 15:07:51 UTC",
+      "employment_type_code": "fulltime_permanent",
+      "remote": false,
+      "status": "published"
+    },
+    {
+      "id": 2771668,
+      "title": "Remote Designer",
+      "company_name": "Acme Bank",
+      "city": null,
+      "country": null,
+      "location": "",
+      "description": "<p>Design things.</p>",
+      "requirements": "",
+      "careers_url": "https://careers.acme.example/o/remote-designer",
+      "published_at": "2026-10-02 09:00:00 UTC",
+      "employment_type_code": "contract",
+      "remote": true,
+      "status": "published"
+    },
+    {
+      "id": 2771669,
+      "title": "Draft Role",
+      "description": "",
+      "careers_url": "https://careers.acme.example/o/draft",
+      "status": "draft"
+    }
+  ]
+}

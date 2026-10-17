@@ -1,0 +1,55 @@
+# state and outputs
+data/
+*.db
+*.db-journal
+
+# PII — never commit
+connections.csv
+profile/**/resume*
+profile/identity.yaml
+profile/preferences.md
+.env
+.env.*
+!.env.example
+
+# local-only notes and diagram tooling
+PROJECT.md
+GITHUB_ISSUES.md
+PR_DESCRIPTION.md
+.archify/
+optimization.png
+
+# agent workspace — local tooling config and working plans
+.claude/
+.superpowers/
+docs/superpowers/plans/
+
+# python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# frontend
+src/frontend/node_modules/
+src/frontend/.next/
+src/frontend/coverage/
+src/frontend/*.tsbuildinfo
+
+# latex build artifacts
+**/build/
+*.aux
+*.log
+*.out
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+src/frontend/.next/
+src/frontend/out/
+eval-cache/
+
+# generated diagram tooling output
+docs/diagrams/

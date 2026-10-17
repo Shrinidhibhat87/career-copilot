@@ -1,0 +1,18 @@
+# Apple Silicon: Ollama runs natively and uses Metal (Docker on macOS cannot).
+# Picked automatically on macOS arm64. See deploy/README.md.
+# qwen3:4b-instruct, not plain qwen3:4b: the plain tag "thinks" and its <think> block
+# can eat a 256-token triage budget before any answer.
+models:
+  backends:
+    ollama: {kind: ollama, base_url: "http://localhost:11434"}
+  roles:
+    triage:    {backend: ollama, model: "qwen3:4b-instruct", max_output_tokens: 256}
+    # 14B thinks: its <think> block ate the 1024-token budget and cut the JSON off on more
+    # than half the calls. The 30B instruct MoE has no think block.
+    match:     {backend: ollama, model: "qwen3:30b-a3b-instruct-2507-q4_K_M", max_output_tokens: 1024}
+    # The agents get their own entries: falling back to triage would give them 256 tokens.
+    profiler:  {backend: ollama, model: "qwen3:4b-instruct", max_output_tokens: 1024}
+    curator:   {backend: ollama, model: "qwen3:4b-instruct", max_output_tokens: 1024}
+    # 4B answers "done" without calling a tool; 14B calls tools but takes 20-60s a message.
+    # The 30B MoE activates ~3B parameters per token and has no think block.
+    assistant: {backend: ollama, model: "qwen3:30b-a3b-instruct-2507-q4_K_M", max_output_tokens: 1024}

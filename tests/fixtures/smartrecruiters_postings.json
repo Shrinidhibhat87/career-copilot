@@ -1,0 +1,23 @@
+{
+  "offset": 0,
+  "limit": 100,
+  "totalFound": 2,
+  "content": [
+    {
+      "id": "744000000000001",
+      "name": "Research Engineer",
+      "company": {"identifier": "AcmeLab", "name": "Acme Lab"},
+      "releasedDate": "2026-10-07T06:32:08.069Z",
+      "location": {"city": "Geneva", "country": "ch", "remote": false, "fullLocation": "Geneva, Switzerland"},
+      "typeOfEmployment": {"id": "permanent", "label": "Full-time"}
+    },
+    {
+      "id": "744000000000002",
+      "name": "Remote Analyst",
+      "company": {"identifier": "AcmeLab", "name": "Acme Lab"},
+      "releasedDate": "2026-10-03T08:00:00.000Z",
+      "location": {"city": "Zurich", "country": "ch", "remote": true},
+      "typeOfEmployment": {"id": "permanent", "label": "Full-time"}
+    }
+  ]
+}

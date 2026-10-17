@@ -1,0 +1,28 @@
+{
+  "object": "list",
+  "has_more": true,
+  "next_cursor": "cursor-page-2",
+  "results": [
+    {
+      "object": "page",
+      "id": "page-acme",
+      "properties": {
+        "Industry": {"type": "select", "select": {"name": "Robotics"}},
+        "Company": {
+          "type": "title",
+          "title": [{"type": "text", "plain_text": "Acme "}, {"type": "text", "plain_text": "GmbH"}]
+        },
+        "Board": {"type": "url", "url": "https://boards.greenhouse.io/acme"},
+        "Notes": {"type": "rich_text", "rich_text": [{"plain_text": "referral via a teammate"}]}
+      }
+    },
+    {
+      "object": "page",
+      "id": "page-cern",
+      "properties": {
+        "Company": {"type": "title", "title": [{"type": "text", "plain_text": "{CERN}"}]},
+        "Board": {"type": "url", "url": null}
+      }
+    }
+  ]
+}

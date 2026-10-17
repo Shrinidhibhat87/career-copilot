@@ -1,0 +1,151 @@
+# career-copilot configuration.
+# Contains no personal data — the profile lives in its own directory.
+
+db_path: data/jobs.db
+profile_dir: profile
+
+# Stop the ladder once this many new qualifying jobs are found in a run.
+stop_after: 15
+
+# Used instead of stop_after while the jobs table is still empty, so the first
+# run collects a real backlog rather than halting after the first company.
+initial_target: 50
+
+# What one board may contribute to a single run, so a large board cannot be the whole
+# run. One Greenhouse board supplied 361 of the first 1071 stored jobs.
+max_jobs_per_target: 100
+
+# A job unseen for this long is marked inactive. Nothing is ever deleted.
+inactive_after_days: 21
+
+# Which model serves which role, and where that model lives. Omitting this block keeps the
+# `scoring.triage_model` / `scoring.match_model` ids above in force, so an existing config
+# needs no edit. Machine-specific: see deploy/README.md for the macOS and Windows shapes.
+models:
+  backends:
+    ollama:      {kind: ollama, base_url: http://localhost:11434}
+    vllm:        {kind: vllm,   base_url: http://localhost:8000/v1}
+    # vLLM-Metal (github.com/vllm-project/vllm-metal), native on this Mac — MLX/Metal
+    # backend, distinct from `vllm` above which is the Windows/NVIDIA Docker one.
+    vllm_metal:  {kind: vllm,   base_url: http://localhost:8001/v1}
+    openrouter:  {kind: openrouter}
+  roles:
+    # Swap `backend:` between ollama / vllm_metal / openrouter to compare them; no code change.
+    # qwen3:4b-instruct (not plain qwen3:4b) — the plain tag "thinks" by default and its
+    # <think> block eats the whole output budget before any answer, per live test.
+    triage: {backend: ollama, model: qwen3:4b-instruct,  max_output_tokens: 256}
+    match:  {backend: ollama, model: qwen3:30b-a3b-instruct-2507-q4_K_M, max_output_tokens: 1024}
+    # The feedback chat must call tools, which the 4B triage model does not do reliably.
+    assistant: {backend: ollama, model: qwen3:14b, max_output_tokens: 1024}
+
+# Ceilings for `career-copilot sources discover`. A discovery run is a loop whose length
+# is not known before it starts, so it is bounded by steps and seconds as well as euros.
+discovery:
+  target_proposals: 3
+  max_searches: 6
+  max_eur_per_run: 0.25
+  max_requests: 12
+  max_tool_calls: 24
+  max_seconds: 600
+
+scoring:
+  initial_target: 50
+  incremental_target: 15
+  # OpenRouter model ids. Needs OPENROUTER_API_KEY in .env.
+  triage_model: openrouter/google/gemini-2.5-flash
+  match_model: openrouter/google/gemini-2.5-pro
+  max_eur_per_run: 1.0
+  # Hard output limits prevent providers reserving an unexpectedly large response.
+  triage_max_output_tokens: 256
+  match_max_output_tokens: 1024
+  # Conservative per-job reservations include the client's one schema retry.
+  triage_reserve_eur: 0.02
+  match_reserve_eur: 0.20
+  rubric_version: 3
+  digest_path: data/digest.md
+
+# Bootstrap seed only. These values derive the preferences held at version 0; once
+# /preferences has been saved the store is the source of truth and this block is no
+# longer read by a run. Editing it then changes nothing.
+filters:
+  allowed_cities: [berlin, munich, hamburg, cologne, frankfurt, remote, ""]
+  preferred_cities: [berlin]
+  flagged_cities: [munich]
+  allow_remote: true
+  require_permanent: true
+  excluded_role_terms: [frontend, front-end, android, ios, mobile developer, qa engineer, sdet, test engineer, salesforce, abap,
+                        value engineer, product manager, support specialist, accountant]
+  # The positive half of the role gate, matched against the title only. A title that
+  # matches none of these is parked for manual review, never rejected. Specific role
+  # phrases, not the bare word "engineer": that would keep Design Engineer - Electronics
+  # and Lead Value Engineer, which is the whack-a-mole this rule exists to end.
+  title_terms: [data engineer, software engineer, backend engineer, python engineer, platform engineer, ml engineer, machine learning engineer,
+                ai engineer, mlops, ml ops, site reliability engineer, sre, devops engineer, data scientist, applied scientist,
+                research engineer, analytics engineer, infrastructure engineer, cloud engineer, solutions engineer,
+                forward deployed engineer, ai enablement, data platform, ai platform, machine learning, llm, genai]
+  core_stack_terms: [python, llm, genai, generative ai, agentic, rag, machine learning, pytorch, hugging face, kafka, databricks, kubernetes, azure, airflow, mlops, data pipeline, computer vision, fastapi]
+  excluded_stack_terms: [angular, react, vue, spring boot, java, .net, c#, php, ruby on rails, typescript]
+  max_per_company: 2
+
+# lifecycle:
+#   Recycle bin (docs/superpowers/specs/010-persistence-and-lifecycle-design.md). A dismissed job waits here,
+#   then is cleaned for good. Commented out: this is the default. Range 1..90.
+#   bin_days: 7
+
+# pii:
+#   Redaction gateway in front of every provider call (docs/superpowers/specs/004-pii-gateway-design.md).
+#   Commented out deliberately: these are the defaults, so an omitted block still redacts.
+#   Uncomment only to change a value.
+#   enabled: true
+#   entities: [PERSON, EMAIL, PHONE, ADDRESS, URL, IBAN, CREDIT_CARD, IP]
+#   # Presidio-only is the safe default boundary; the recall pass below is an explicit
+#   # opt-in so an existing install is never broken by requiring a running Ollama.
+#   llm_pass: false
+#   llm_endpoint: http://localhost:11434
+#   # Non-loopback requires this too, so a typo in llm_endpoint can't ship the resume
+#   # to a third party through the component meant to prevent that.
+#   llm_allow_remote: false
+#   language: en
+#   llm_model: qwen2.5:3b
+#   llm_timeout_seconds: 30
+#   # block: an unreachable/misbehaving Ollama aborts the run once llm_pass is on.
+#   # presidio_only: degrade to the deterministic floor and log a warning instead.
+#   llm_failure: block
+#   # Outbound scan of the provider's reply for PII never in the redaction map.
+#   outbound: warn
+#   # PERSON precision (docs/superpowers/specs/004-pii-gateway-design.md).
+#   # The owner's name, email and phone are derived from the resume itself and redacted
+#   # everywhere they occur; single-token PERSON hits (Kafka, Grafana) are dropped, because
+#   # they are product names carrying scoring signal, not people.
+#   owner_anchor: true
+#   drop_single_token_person: true
+#   # Stragglers only. The seed already covers filters.core_stack_terms plus the built-in
+#   # product list; a list growing past a dozen entries means the structural rule needs work.
+#   person_false_positive_terms: []
+#   # Optional, absent by default: pin identity values derivation cannot see (a maiden name,
+#   # a second phone number). See profile/identity.example.yaml for the shape.
+#   identity_path: profile/identity.yaml
+
+# A curated company watchlist, synced with `career-copilot sources sync`. One list at a
+# time. Resolution is deterministic probing of the real board APIs — no LLM, no search
+# spend — and a resolved company is crawled on the next run with no approval step.
+company_lists:
+  notion:
+    # The 32-hex id from the database's own URL, before `?v=`. NOTION_API_KEY goes in
+    # .env, and the database must also be shared with the integration inside Notion.
+    database_id: "3f0a06e8-6371-8067-866f-c3d68c16aba2"
+#   csv:
+#     # A two-column `name,url` export. `url` is optional.
+#     path: ""
+
+# Tier 0: verified public ATS boards. Free and structured.
+# Add a company by appending its board slug — no code change needed.
+targets:
+  - { source: greenhouse, identifier: n26, tier: 0, cooldown_hours: 48 }
+  - { source: greenhouse, identifier: celonis, tier: 0, cooldown_hours: 48 }
+  - { source: greenhouse, identifier: contentful, tier: 0, cooldown_hours: 48 }
+  - { source: greenhouse, identifier: raisin, tier: 0, cooldown_hours: 48 }
+  - { source: greenhouse, identifier: helsing, tier: 0, cooldown_hours: 48 }
+  - { source: greenhouse, identifier: getyourguide, tier: 0, cooldown_hours: 48 }
+  - { source: greenhouse, identifier: doctolib, tier: 0, cooldown_hours: 48 }
+  - { source: greenhouse, identifier: hellofresh, tier: 0, cooldown_hours: 48 }

@@ -1,0 +1,13 @@
+# NVIDIA GPU: vLLM in Docker (deploy/vllm/docker-compose.yml) serving the 4-bit AWQ build
+# of Qwen3-4B-Instruct as `qwen3-4b-instruct`. Picked automatically when nvidia-smi works.
+# Port 8001 is the compose file's host port; 8000 belongs to `career-copilot ui`.
+models:
+  backends:
+    vllm: {kind: vllm, base_url: "http://localhost:8001/v1"}
+  roles:
+    triage:    {backend: vllm, model: qwen3-4b-instruct, max_output_tokens: 256}
+    match:     {backend: vllm, model: qwen3-4b-instruct, max_output_tokens: 1024}
+    # The agents get their own entries: falling back to triage would give them 256 tokens.
+    profiler:  {backend: vllm, model: qwen3-4b-instruct, max_output_tokens: 1024}
+    curator:   {backend: vllm, model: qwen3-4b-instruct, max_output_tokens: 1024}
+    assistant: {backend: vllm, model: qwen3-4b-instruct, max_output_tokens: 1024}

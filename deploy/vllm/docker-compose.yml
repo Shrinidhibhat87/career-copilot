@@ -1,0 +1,42 @@
+# vLLM on the Windows desktop, through WSL2. Bring it up yourself; the app only ever
+# talks HTTP to it, and `career-copilot doctor` reports whether it answered.
+#
+#   docker compose -f deploy/vllm/docker-compose.yml up
+#
+# The GPU is a GTX 1660 Ti: Turing, 6 GB. Turing has no bf16 and no FP8, so --dtype half
+# is mandatory rather than an optimisation, and the model has to be small enough that
+# weights plus KV cache fit in 6 GB. A 4B model in fp16 is about 8 GB of weights and
+# does not fit; the 4-bit AWQ build is about 2.5 GB, which leaves about 2 GB for the KV
+# cache at 8k context. An 8B model does not fit even at 4 bits.
+#
+# The host port is 8001, not 8000: `career-copilot ui` serves on 8000, so both can run.
+# The container still listens on 8000 inside; only the host side moves. Roles refer to
+# the model as `qwen3-4b-instruct` (--served-model-name), not the long repo id.
+services:
+  vllm:
+    image: vllm/vllm-openai:latest
+    ports:
+      - "8001:8000"
+    volumes:
+      # Weights are cached on the host so a container restart is not a re-download.
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN:-}
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command:
+      - --model=Eslzzyl/Qwen3-4B-Instruct-2507-AWQ
+      - --served-model-name=qwen3-4b-instruct
+      - --quantization=awq
+      - --dtype=half
+      - --max-model-len=8192
+      # 0.85, not 0.90: Windows draws the desktop on the same GPU.
+      - --gpu-memory-utilization=0.85
+      - --enable-auto-tool-choice
+      - --tool-call-parser=hermes

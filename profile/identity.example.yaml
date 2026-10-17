@@ -1,0 +1,18 @@
+# Optional pinned identity for the PERSON anchor.
+#
+# You do not need this file. The owner's name, email addresses and phone numbers are
+# derived from the resume itself, and that is the normal path — nothing warns when this
+# file is absent.
+#
+# Copy it to profile/identity.yaml (gitignored) only for values the resume does not state:
+# a maiden name, a former address, a second phone number. Whatever is listed here is added
+# to the derived values, never substituted for them. A malformed file fails at start-up
+# rather than being ignored.
+
+names:
+  - Jane Doe
+  - J. Doe
+emails:
+  - jane.doe@example.com
+phones:
+  - "+49 30 1234567"

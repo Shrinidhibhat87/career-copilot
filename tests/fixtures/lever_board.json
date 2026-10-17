@@ -1,0 +1,26 @@
+[
+  {
+    "id": "8f1c2d3e-0000-4a1b-9c2d-111111111111",
+    "text": "Senior AI Engineer (f/m/x)",
+    "createdAt": 1754000000000,
+    "hostedUrl": "https://jobs.lever.co/beta/8f1c2d3e-0000-4a1b-9c2d-111111111111",
+    "categories": {
+      "location": "Berlin",
+      "commitment": "Full-time",
+      "workplaceType": "hybrid"
+    },
+    "descriptionPlain": "Build agentic systems in production. Permanent role."
+  },
+  {
+    "id": "8f1c2d3e-0000-4a1b-9c2d-222222222222",
+    "text": "Working Student Data",
+    "createdAt": 1754100000000,
+    "hostedUrl": "https://jobs.lever.co/beta/8f1c2d3e-0000-4a1b-9c2d-222222222222",
+    "categories": {
+      "location": "Remote",
+      "commitment": "Part-time",
+      "workplaceType": "remote"
+    },
+    "description": "<p>Support the data team while studying.</p>"
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "object": "list",
+  "has_more": false,
+  "next_cursor": null,
+  "results": [
+    {
+      "object": "page",
+      "id": "page-titleonly",
+      "properties": {
+        "Name": {"type": "title", "title": [{"type": "text", "plain_text": "Title Only AG"}]}
+      }
+    },
+    {
+      "object": "page",
+      "id": "page-blank",
+      "properties": {
+        "Name": {"type": "title", "title": []}
+      }
+    }
+  ]
+}
