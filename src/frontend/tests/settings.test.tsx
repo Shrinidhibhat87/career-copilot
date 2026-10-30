@@ -56,6 +56,7 @@ function serve(
       return response({ ok: true, roles: health });
     }
     if (url.endsWith("/api/runs") && !init?.method) return response(runs);
+    if (url.endsWith("/api/sources/health")) return response([]);
     if (url.includes("/api/jobs?")) return response({ items: [], total: 0, page: 1, limit: 20 });
     throw new Error(`unexpected request: ${url}`);
   });
@@ -113,7 +114,7 @@ describe("settings page", () => {
     expect(screen.getByRole("button", { name: "Run history" })).toBeInTheDocument();
   });
 
-  it("keeps Observability, Results, Run history and the account sections closed, in that order", async () => {
+  it("keeps Observability, Results, Run history, Job sources and the account sections closed, in that order", async () => {
     const fetchMock = serve(LOCAL_ROLES);
     render(<SettingsPage />);
     await settle(fetchMock);
@@ -121,10 +122,11 @@ describe("settings page", () => {
       button.classList.contains("disclosure-toggle"),
     );
     expect(toggles.map((button) => button.textContent?.replace("›", "").trim())).toEqual([
-      "Observability", "Results", "Run history", "Download your data", "Delete this account",
+      "Observability", "Results", "Run history", "Job sources", "Download your data",
+      "Delete this account",
     ]);
     expect(toggles.map((button) => button.getAttribute("aria-expanded"))).toEqual([
-      "false", "false", "false", "false", "false",
+      "false", "false", "false", "false", "false", "false",
     ]);
     expect(screen.getByRole("columnheader", { name: "Cost", hidden: true })).toBeInTheDocument();
   });

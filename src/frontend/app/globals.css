@@ -1482,6 +1482,17 @@ a.company-name:hover { color: var(--color-brand); text-decoration: underline; }
 .review-list td:nth-child(4) { padding-left: 2px; padding-right: 2px; }
 .source-name { letter-spacing: 0; }
 
+/* Job source health */
+.source-table small { color: var(--color-muted); display: block; margin-top: 4px; }
+.source-status { border-radius: var(--radius-pill); display: inline-block; font-size: 12.5px; padding: 2px 10px; background: var(--color-panel); }
+.source-status[data-status="ok"] { background: var(--color-ok-bg); }
+.source-status[data-status="paused"] { background: var(--color-bad-bg); color: #9e3a30; }
+.source-status[data-status="degraded"] { background: #f6ecd8; }
+.source-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.source-actions button { background: transparent; border: 1px solid var(--color-line); border-radius: var(--radius-control); cursor: pointer; font-size: 13px; padding: 4px 12px; }
+.source-actions button:disabled { cursor: default; opacity: 0.6; }
+.source-note.source-bad { color: #9e3a30; }
+
 /* Observability */
 .obs-windows { display: flex; gap: 8px; margin: 4px 0 16px; }
 .obs-window { background: transparent; border: 1px solid var(--color-line); border-radius: 999px; color: var(--color-muted); cursor: pointer; font: inherit; font-size: 13px; padding: 4px 14px; }
