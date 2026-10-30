@@ -280,7 +280,7 @@ def test_migrations_are_idempotent(tmp_path: object) -> None:
     store = SqliteStore(path)
     version = store._conn.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0]
     store.close()
-    assert version == 32
+    assert version == 33
 
 
 def test_migration_v2_creates_scores_and_run_cost_columns(tmp_path: object) -> None:
@@ -295,7 +295,7 @@ def test_migration_v2_creates_scores_and_run_cost_columns(tmp_path: object) -> N
         }
     finally:
         store.close()
-    assert version == 32
+    assert version == 33
     assert {"job_id", "stage", "score", "verdict", "rubric_version", "model"} <= score_columns
     assert {"llm_calls", "cost_eur"} <= run_columns
 

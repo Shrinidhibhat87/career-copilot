@@ -70,6 +70,8 @@ class StateStore(Protocol):
         fetched: int,
         error: str | None,
         now: datetime,
+        reason: str | None = None,
+        duration_ms: int | None = None,
     ) -> None: ...
 
     def is_cooled_down(self, source: str, identifier: str, now: datetime) -> bool: ...

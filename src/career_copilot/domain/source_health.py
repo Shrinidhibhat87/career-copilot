@@ -26,6 +26,23 @@ class FailureReason(StrEnum):
     BAD_RESPONSE = "bad_response"
 
 
+# What the run view and the digest say for each reason, in place of a raw error that can be
+# long and carry a URL.
+REASON_TEXT: dict[str, str] = {
+    FailureReason.UNREACHABLE: "could not be reached",
+    FailureReason.TIMEOUT: "took too long to answer",
+    FailureReason.RATE_LIMITED: "asked us to slow down and is being left alone for a while",
+    FailureReason.FORBIDDEN: "refused access",
+    FailureReason.SERVER_ERROR: "had an error on its side",
+    FailureReason.BAD_RESPONSE: "answered something unexpected",
+}
+
+
+def explain(reason: str | None) -> str | None:
+    """The sentence for a stored reason, or None for a row recorded before reasons existed."""
+    return REASON_TEXT.get(reason or "")
+
+
 @dataclass(frozen=True, slots=True)
 class FailureRead:
     """What a failed fetch means for the source it came from."""

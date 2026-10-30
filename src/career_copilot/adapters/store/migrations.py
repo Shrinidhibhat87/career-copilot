@@ -665,6 +665,15 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         );
         """,
     ),
+    (
+        33,
+        """
+        -- Why a fetch failed (a FailureReason value) and how long it took. NULL for rows
+        -- recorded before this, and `reason` stays NULL on a success.
+        ALTER TABLE source_runs ADD COLUMN reason TEXT;
+        ALTER TABLE source_runs ADD COLUMN duration_ms INTEGER;
+        """,
+    ),
 )
 
 

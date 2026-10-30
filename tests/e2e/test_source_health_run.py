@@ -150,9 +150,11 @@ def test_the_migration_adds_the_table_to_an_existing_database(tmp_path: Any) -> 
     conn = sqlite3.connect(tmp_path / "old.db")
     conn.row_factory = sqlite3.Row
     conn.execute("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY)")
-    # A database at the version before this change: apply everything but the last, then migrate.
-    for version, sql in MIGRATIONS[:-1]:
+    # A database at the version before this change (31), then migrate.
+    for version, sql in MIGRATIONS:
+        if version >= 32:
+            break
         conn.executescript(sql)
         conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", (version,))
-    assert migrate(conn) == MIGRATIONS[-1][0]
+    assert migrate(conn) >= 32
     assert conn.execute("SELECT COUNT(*) FROM source_health").fetchone()[0] == 0
