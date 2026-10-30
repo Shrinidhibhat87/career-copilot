@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -70,36 +71,42 @@ def test_ping_asks_for_one_result_and_reports_the_total() -> None:
     assert len(asked) == 1 and "size=1" in asked[0] and "/pc/v6/jobs?" in asked[0]
 
 
-def _doctor_line(monkeypatch: pytest.MonkeyPatch, capsys: CaptureFixture[str], fetch: Any) -> str:
+def _config(tmp_path: Path, **kw: Any) -> Config:
+    return Config(db_path=str(tmp_path / "jobs.db"), **kw)
+
+
+def _doctor_line(
+    monkeypatch: pytest.MonkeyPatch, capsys: CaptureFixture[str], fetch: Any, tmp_path: Path
+) -> str:
     class Fake(JobsucheSource):
         def __init__(self) -> None:
             super().__init__(fetcher=fetch)
 
     monkeypatch.setattr(cli, "SEARCH_SOURCES", {"jobsuche": Fake})
-    cli._report_sources(Config())
+    cli._report_sources(_config(tmp_path))
     return capsys.readouterr().out
 
 
 def test_doctor_reports_a_reachable_source(
-    monkeypatch: pytest.MonkeyPatch, capsys: CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch, capsys: CaptureFixture[str], tmp_path: Path
 ) -> None:
-    out = _doctor_line(monkeypatch, capsys, lambda url: {"maxErgebnisse": 42})
+    out = _doctor_line(monkeypatch, capsys, lambda url: {"maxErgebnisse": 42}, tmp_path)
     assert out.startswith("ok   source jobsuche") and "42 postings" in out
 
 
 def test_doctor_warns_and_does_not_raise_when_a_source_is_down(
-    monkeypatch: pytest.MonkeyPatch, capsys: CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch, capsys: CaptureFixture[str], tmp_path: Path
 ) -> None:
     def down(url: str) -> Any:
         raise httpx.ConnectError("no route")
 
-    out = _doctor_line(monkeypatch, capsys, down)
+    out = _doctor_line(monkeypatch, capsys, down, tmp_path)
     assert out.startswith("warn source jobsuche") and "no route" in out
 
 
 def test_doctor_sends_nothing_when_the_source_is_switched_off(
-    monkeypatch: pytest.MonkeyPatch, capsys: CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch, capsys: CaptureFixture[str], tmp_path: Path
 ) -> None:
     monkeypatch.setattr(cli, "SEARCH_SOURCES", {"jobsuche": lambda: 1 / 0})
-    cli._report_sources(Config(jobsuche=JobsucheSpec(enabled=False)))
+    cli._report_sources(_config(tmp_path, jobsuche=JobsucheSpec(enabled=False)))
     assert capsys.readouterr().out == ""

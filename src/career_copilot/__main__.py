@@ -29,6 +29,7 @@ from career_copilot.usecases.pipeline import (
     build_digest_run,
     build_discover_run,
     build_score_run,
+    build_sources,
     current_preferences,
     finalize_error,
     freeze_config,
@@ -38,6 +39,7 @@ from career_copilot.usecases.pipeline import (
 from career_copilot.usecases.pipeline import (
     config_seed as config_seed,
 )
+from career_copilot.usecases.source_health import SourceOverview, source_overview
 
 app = typer.Typer(add_completion=False, help="Personal job-search agent.")
 app.add_typer(sources_app, name="sources")
@@ -336,8 +338,17 @@ def doctor(
 
 
 def _report_sources(config: Config) -> None:
-    """One request per searched source, to see it answers. A source being down is a warning,
-    not a failure: `score` works on what is already stored."""
+    """Each source's stored status, then one request per searched source to see it answers.
+
+    Never a request per board: the stored status is what runs have already learned. A source
+    being down is a warning, not a failure, because `score` works on what is already stored."""
+    with SqliteStore(config.db_path) as store:
+        rows = source_overview(store, config, build_sources(), _now())
+    for row in rows:
+        # A searched source that works is reported by its live check below instead.
+        if row.source in SEARCH_SOURCES and row.status in ("ok", "unknown"):
+            continue
+        _report_source_status(row)
     if not config.jobsuche.enabled:
         return
     for name, source_class in SEARCH_SOURCES.items():
@@ -350,6 +361,30 @@ def _report_sources(config: Config) -> None:
                 f"ok   source {name} — reachable ({total} postings match a test search)",
                 fg=typer.colors.GREEN,
             )
+
+
+def _report_source_status(row: SourceOverview) -> None:
+    boards = f"{row.targets} board{'s' if row.targets != 1 else ''}"
+    if row.status == "ok":
+        typer.secho(
+            f"ok   source {row.source} — working, {row.fetched_last_7_days} jobs in the last "
+            f"7 days ({boards})",
+            fg=typer.colors.GREEN,
+        )
+    elif row.status == "unknown":
+        typer.echo(f"--   source {row.source} — not tried yet ({boards})")
+    else:
+        until = (
+            f" until {row.paused_until:%Y-%m-%d %H:%M} UTC"
+            if row.status == "paused" and row.paused_until
+            else ""
+        )
+        label = "paused" if row.status == "paused" else "having trouble"
+        problem = f": {row.last_message}" if row.last_message else ""
+        typer.secho(
+            f"warn source {row.source} — {label}{until}{problem} ({boards})",
+            fg=typer.colors.YELLOW,
+        )
 
 
 def _report_cv(config: Config) -> bool:
