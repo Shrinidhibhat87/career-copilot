@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from career_copilot.agents import clamp, prompt_hash
+from career_copilot.domain.ad_text import clean_ad
 from career_copilot.domain.models import JobPosting
 from career_copilot.ports import LLMClient
 
@@ -49,7 +50,7 @@ class TriageAgent:
             f"Title: {posting.title}\n"
             f"Company: {posting.company}\n"
             f"Location: {posting.location or 'not stated'}\n"
-            f"Description: {posting.description[: self._description_chars]}\n"
+            f"Description: {clean_ad(posting.description)[: self._description_chars]}\n"
         )
 
     def evaluate(self, posting: JobPosting) -> TriageResult:
