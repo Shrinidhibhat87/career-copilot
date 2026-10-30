@@ -101,7 +101,9 @@ def test_each_error_maps_to_one_reason() -> None:
     assert classify(_status_error(403)) is FailureReason.FORBIDDEN
     assert classify(_status_error(401)) is FailureReason.FORBIDDEN
     assert classify(_status_error(503)) is FailureReason.SERVER_ERROR
-    assert classify(_status_error(404)) is FailureReason.BAD_RESPONSE
+    assert classify(_status_error(404)) is FailureReason.NOT_FOUND
+    assert classify(_status_error(410)) is FailureReason.NOT_FOUND
+    assert classify(_status_error(400)) is FailureReason.BAD_RESPONSE
     assert classify(httpx.ReadTimeout("slow")) is FailureReason.TIMEOUT
     assert classify(httpx.ConnectError("down")) is FailureReason.UNREACHABLE
     assert classify(KeyError("jobs")) is FailureReason.BAD_RESPONSE
@@ -134,3 +136,10 @@ def test_resume_leaves_a_source_that_is_not_paused_alone() -> None:
     open_ = fail(None, T0)
     assert resume(open_, T0) is open_
     assert resume(None, T0) is None
+
+
+def test_a_removed_board_does_not_count_against_the_source() -> None:
+    assert read_failure(_status_error(404)).counts is False
+    assert read_failure(_status_error(410)).counts is False
+    assert read_failure(_status_error(403)).counts is True
+    assert read_failure(_status_error(503)).counts is True

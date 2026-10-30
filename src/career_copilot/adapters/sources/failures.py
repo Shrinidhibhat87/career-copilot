@@ -19,6 +19,8 @@ from career_copilot.domain.source_health import (
 def classify(error: Exception) -> FailureReason:
     if isinstance(error, httpx.HTTPStatusError):
         code = error.response.status_code
+        if code in (404, 410):
+            return FailureReason.NOT_FOUND
         if code == 429:
             return FailureReason.RATE_LIMITED
         if code in (401, 403):
@@ -46,8 +48,10 @@ def retry_after_hours(error: Exception) -> float | None:
 
 
 def read_failure(error: Exception) -> FailureRead:
+    reason = classify(error)
     return FailureRead(
-        reason=classify(error),
+        reason=reason,
         retry_after_hours=retry_after_hours(error),
-        counts=not isinstance(error, BoardNotFound),
+        # A removed board says nothing about the service, so it never counts against it.
+        counts=not isinstance(error, BoardNotFound) and reason is not FailureReason.NOT_FOUND,
     )

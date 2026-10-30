@@ -104,7 +104,11 @@ describe("SourceHealth", () => {
     render(<SourceHealth />);
     await open();
     fireEvent.click(await screen.findByRole("button", { name: "Test greenhouse" }));
-    expect(await screen.findByText("Answered: 14 found in 320 ms.")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Answered: 14 found in 320 ms. Test only, nothing was saved. Last success updates after the next run.",
+      ),
+    ).toBeInTheDocument();
     expect(calls).toContain("POST /api/sources/greenhouse/test");
   });
 
@@ -123,7 +127,9 @@ describe("SourceHealth", () => {
     render(<SourceHealth />);
     await open();
     fireEvent.click(await screen.findByRole("button", { name: "Test greenhouse" }));
-    expect(await screen.findByText("Did not work: took too long to answer.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Did not work: took too long to answer. Test only, nothing was saved."),
+    ).toBeInTheDocument();
   });
 
   it("shows the server's wording when a source was tested a moment ago", async () => {
