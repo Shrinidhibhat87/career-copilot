@@ -42,7 +42,7 @@ def test_migration_keeps_existing_rows_and_leaves_parts_null(tmp_path: Path) -> 
     migrate(conn)
     columns = {row["name"] for row in conn.execute("PRAGMA table_info(scores)")}
     assert "parts" in columns
-    assert conn.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0] == 31
+    assert conn.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0] == 32
 
 
 def test_a_version_one_job_is_still_listed_with_null_parts(

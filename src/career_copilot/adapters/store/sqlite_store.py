@@ -38,6 +38,7 @@ from career_copilot.domain.runs import Progress, RunConfig, RunInProgress, stall
 from career_copilot.domain.sample_roles import SampleRole
 from career_copilot.domain.scoring import Score, ScoredJob, ScoreVerdict
 from career_copilot.domain.search_profile import SearchProfile
+from career_copilot.domain.source_health import FailureReason, SourceHealth
 from career_copilot.domain.sources import (
     BoardVisit,
     CompanyRef,
@@ -1752,6 +1753,60 @@ class SqliteStore:
                 now.isoformat(),
                 (now + timedelta(hours=wait)).isoformat(),
                 failures,
+            ),
+        )
+        self._conn.commit()
+
+    # --- source health ----------------------------------------------------
+
+    def source_health(self, source: str) -> SourceHealth | None:
+        row = self._conn.execute(
+            "SELECT * FROM source_health WHERE source = ?", (source,)
+        ).fetchone()
+        if row is None:
+            return None
+
+        def when(value: str | None) -> datetime | None:
+            return datetime.fromisoformat(value) if value else None
+
+        return SourceHealth(
+            source=row["source"],
+            consecutive_failures=row["consecutive_failures"],
+            paused_until=when(row["paused_until"]),
+            pause_hours=row["pause_hours"],
+            last_ok_at=when(row["last_ok_at"]),
+            last_failure_at=when(row["last_failure_at"]),
+            last_failure=FailureReason(row["last_failure"]) if row["last_failure"] else None,
+            last_message=row["last_message"],
+        )
+
+    def save_source_health(self, health: SourceHealth) -> None:
+        def text(value: datetime | None) -> str | None:
+            return value.isoformat() if value else None
+
+        self._conn.execute(
+            """
+            INSERT INTO source_health (source, consecutive_failures, paused_until, pause_hours,
+                                       last_ok_at, last_failure_at, last_failure, last_message)
+            VALUES (?,?,?,?,?,?,?,?)
+            ON CONFLICT (source) DO UPDATE SET
+                consecutive_failures = excluded.consecutive_failures,
+                paused_until         = excluded.paused_until,
+                pause_hours          = excluded.pause_hours,
+                last_ok_at           = excluded.last_ok_at,
+                last_failure_at      = excluded.last_failure_at,
+                last_failure         = excluded.last_failure,
+                last_message         = excluded.last_message
+            """,
+            (
+                health.source,
+                health.consecutive_failures,
+                text(health.paused_until),
+                health.pause_hours,
+                text(health.last_ok_at),
+                text(health.last_failure_at),
+                health.last_failure.value if health.last_failure else None,
+                health.last_message,
             ),
         )
         self._conn.commit()

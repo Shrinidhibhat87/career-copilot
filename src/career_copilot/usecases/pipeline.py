@@ -16,6 +16,7 @@ from career_copilot.adapters.observability import agent_recording, recorder_for
 from career_copilot.adapters.pii.factory import build_redactor
 from career_copilot.adapters.profile_loader import load_notes
 from career_copilot.adapters.sources.ats import SOURCE_TYPES
+from career_copilot.adapters.sources.failures import read_failure
 from career_copilot.adapters.sources.jobsuche import SEARCH_SOURCES, JobsucheSource
 from career_copilot.adapters.store.sqlite_store import SqliteStore
 from career_copilot.agents.curator.agent import build_curator
@@ -32,6 +33,7 @@ from career_copilot.domain.preferences import Preferences, bootstrap
 from career_copilot.domain.profile import Profile
 from career_copilot.domain.runs import Progress, RunCancelled, RunConfig, ScorePreview
 from career_copilot.domain.search_targets import search_targets
+from career_copilot.domain.source_health import HealthConfig
 from career_copilot.ports import (
     FAILURE_MESSAGES,
     Embedder,
@@ -223,6 +225,8 @@ def build_discover_run(
         progress=progress,
         cancel=cancel,
         budget_eur=frozen.budget_eur,
+        health=HealthConfig(**config.source_health.model_dump()),
+        read_failure=read_failure,
         hide_reposts=lambda ids, at: hide_reposts(
             store, embedder, ids, config.dedupe.repost_similarity, at
         ),

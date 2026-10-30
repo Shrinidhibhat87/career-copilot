@@ -285,6 +285,14 @@ class CsvListSpec(BaseModel):
     path: str = ""
 
 
+class SourceHealthSpec(BaseModel):
+    """When a whole job source is paused after repeated failures (spec 017)."""
+
+    open_after: int = Field(default=3, ge=1)
+    pause_hours: int = Field(default=24, ge=1)
+    max_pause_hours: int = Field(default=24 * 7, ge=1)
+
+
 class JobsucheSpec(BaseModel):
     """The German federal job board, searched from the saved preferences (role terms and
     allowed cities). On by default; it only ever sends a request when a city is saved."""
@@ -340,6 +348,7 @@ class Config(BaseModel):
     discovery: DiscoverySpec = Field(default_factory=DiscoverySpec)
     company_lists: CompanyListsSpec = Field(default_factory=CompanyListsSpec)
     jobsuche: JobsucheSpec = Field(default_factory=JobsucheSpec)
+    source_health: SourceHealthSpec = Field(default_factory=SourceHealthSpec)
     notion: NotionSpec = Field(default_factory=NotionSpec)
     targets: list[TargetSpec] = Field(default_factory=list)
     # Which model profile was overlaid on `models:`, and why. Set by `load`, never read

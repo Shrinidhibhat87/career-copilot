@@ -133,6 +133,15 @@ jobsuche:
   enabled: true
   radius_km: 25
 
+# When a whole job source (one vendor, such as workable) is paused after repeated failures.
+# It opens after `open_after` failed fetches in a row, or at once when the service says how
+# long to stay away. After the pause one board is tried again; a failed retry doubles the
+# pause, up to `max_pause_hours`. Each board also keeps its own backoff.
+source_health:
+  open_after: 3
+  pause_hours: 24
+  max_pause_hours: 168
+
 # A curated company watchlist, synced with `career-copilot sources sync`. One list at a
 # time. Resolution is deterministic probing of the real board APIs — no LLM, no search
 # spend — and a resolved company is crawled on the next run with no approval step.

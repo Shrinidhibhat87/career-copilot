@@ -23,6 +23,13 @@ from career_copilot.domain.models import (
 )
 from career_copilot.domain.normalize import to_posting
 from career_copilot.domain.runs import Progress, RunCancelled
+from career_copilot.domain.source_health import (
+    FailureRead,
+    HealthConfig,
+    blocks,
+    record,
+    unread,
+)
 from career_copilot.ports import JobSource, StateStore
 
 log = logging.getLogger(__name__)
@@ -58,7 +65,11 @@ class DiscoverRun:
         cancel: Event | None = None,
         budget_eur: float = 0,
         hide_reposts: Callable[[Sequence[int], datetime], int] | None = None,
+        health: HealthConfig | None = None,
+        read_failure: Callable[[Exception], FailureRead] = unread,
     ) -> None:
+        self._health = health or HealthConfig()
+        self._read_failure = read_failure
         self._hide_reposts = hide_reposts
         self._run_id = run_id
         self._progress = progress
@@ -105,6 +116,14 @@ class DiscoverRun:
                 skipped.append(f"{target.source}:{target.identifier} (no adapter)")
                 continue
 
+            health = self._store.source_health(target.source)
+            if blocks(health, now):
+                # The whole source is paused. Once the pause ends, the next target of it
+                # is the retry, and its result decides whether the rest follow.
+                until = health.paused_until.isoformat(timespec="minutes")  # type: ignore[union-attr]
+                skipped.append(f"{target.source}:{target.identifier} (source paused until {until})")
+                continue
+
             if not self._store.is_cooled_down(target.source, target.identifier, now):
                 skipped.append(f"{target.source}:{target.identifier} (cooldown)")
                 continue
@@ -118,6 +137,20 @@ class DiscoverRun:
                 self._store.record_source_run(
                     run_id, target.source, target.identifier, False, 0, str(exc), now
                 )
+                failure = self._read_failure(exc)
+                if failure.counts:
+                    self._store.save_source_health(
+                        record(
+                            health,
+                            target.source,
+                            False,
+                            now,
+                            self._health,
+                            reason=failure.reason,
+                            message=str(exc),
+                            retry_after_hours=failure.retry_after_hours,
+                        )
+                    )
                 self._store.set_cooldown(
                     target.source, target.identifier, now, target.cooldown_hours, failed=True
                 )
@@ -154,6 +187,7 @@ class DiscoverRun:
             self._store.record_source_run(
                 run_id, target.source, target.identifier, True, len(raw_jobs), None, now
             )
+            self._store.save_source_health(record(health, target.source, True, now, self._health))
             self._store.set_cooldown(target.source, target.identifier, now, target.cooldown_hours)
             source_runs.append(
                 SourceRunReport(target.source, target.identifier, ok=True, fetched=len(raw_jobs))
