@@ -129,3 +129,72 @@ def test_discovery_rejects_limits_that_would_disable_a_ceiling(
 ) -> None:
     result = invoke(workspace, "discover", option, value)
     assert result.exit_code == 2
+
+
+class _Board:
+    def __init__(self, error: Exception | None = None) -> None:
+        self.name = "greenhouse"
+        self.error = error
+
+    def fetch(self, target: object) -> list[object]:
+        if self.error:
+            raise self.error
+        return [object(), object(), object()]
+
+
+def test_sources_test_reports_each_source_and_writes_nothing(
+    workspace: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(cli_sources, "build_sources", lambda: {"greenhouse": _Board()})
+    result = invoke(workspace, "test")
+    assert result.exit_code == 0
+    assert "ok   greenhouse — 3 found in" in result.stdout
+    with SqliteStore(str(tmp_path / "users" / "test" / "jobs.db")) as store:
+        assert store.source_health("greenhouse") is None
+
+
+def test_sources_test_exits_non_zero_and_says_why_when_a_source_fails(
+    workspace: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import httpx
+
+    board = _Board(httpx.ConnectError("refused https://x.test/?secret=1"))
+    monkeypatch.setattr(cli_sources, "build_sources", lambda: {"greenhouse": board})
+    result = invoke(workspace, "test", "greenhouse")
+    assert result.exit_code == 1
+    assert "FAIL greenhouse — could not be reached" in result.stdout
+    assert "secret" not in result.stdout
+
+
+def test_sources_test_and_resume_reject_a_name_nobody_has(
+    workspace: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(cli_sources, "build_sources", lambda: {"greenhouse": _Board()})
+    assert invoke(workspace, "test", "nope").exit_code == 1
+    assert invoke(workspace, "resume", "nope").exit_code == 1
+
+
+def test_sources_resume_cuts_a_pause_short(
+    workspace: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from career_copilot.domain.source_health import FailureReason, HealthConfig, record
+
+    monkeypatch.setattr(cli_sources, "build_sources", lambda: {"greenhouse": _Board()})
+    now = datetime.now(UTC)
+    health = None
+    for _ in range(3):
+        health = record(
+            health, "greenhouse", False, now, HealthConfig(), reason=FailureReason.TIMEOUT
+        )
+    assert health is not None
+    with SqliteStore(str(tmp_path / "users" / "test" / "jobs.db")) as store:
+        store.save_source_health(health)
+    result = invoke(workspace, "resume", "greenhouse")
+    assert result.exit_code == 0 and "greenhouse: degraded" in result.stdout
+    with SqliteStore(str(tmp_path / "users" / "test" / "jobs.db")) as store:
+        saved = store.source_health("greenhouse")
+    assert (
+        saved is not None
+        and saved.paused_until is not None
+        and saved.paused_until <= datetime.now(UTC)
+    )

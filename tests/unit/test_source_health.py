@@ -14,6 +14,7 @@ from career_copilot.domain.source_health import (
     SourceHealth,
     blocks,
     record,
+    resume,
     status,
 )
 
@@ -116,3 +117,20 @@ def test_only_a_long_retry_after_counts_as_a_block() -> None:
 def test_a_missing_board_does_not_count_against_the_source() -> None:
     assert read_failure(BoardNotFound("no such board")).counts is False
     assert read_failure(RuntimeError("x")).counts is True
+
+
+def test_resume_cuts_a_pause_short_and_a_failed_retry_still_doubles_it() -> None:
+    paused = fail(fail(fail(None, T0), T0), T0)
+    soon = T0 + timedelta(hours=1)
+    resumed = resume(paused, soon)
+    assert resumed is not None and not blocks(resumed, soon)
+    assert status(resumed, soon) == "degraded"
+    retry_failed = fail(resumed, soon)
+    assert retry_failed.pause_hours == 48
+    assert retry_failed.paused_until == soon + timedelta(hours=48)
+
+
+def test_resume_leaves_a_source_that_is_not_paused_alone() -> None:
+    open_ = fail(None, T0)
+    assert resume(open_, T0) is open_
+    assert resume(None, T0) is None

@@ -35,8 +35,14 @@ from career_copilot.usecases.find_board import AddBoardError, add_board, find_bo
 from career_copilot.usecases.import_sources import CompanyListUnavailable
 from career_copilot.usecases.import_sources import build_run as build_import_run
 from career_copilot.usecases.model_settings import in_force
-from career_copilot.usecases.pipeline import crawl_targets, current_preferences
+from career_copilot.usecases.pipeline import build_sources, crawl_targets, current_preferences
 from career_copilot.usecases.set_board import SetBoardError, set_board
+from career_copilot.usecases.source_health import (
+    UnknownSource,
+    resume_source,
+    sources_to_test,
+    try_source,
+)
 
 app = typer.Typer(help="Find, review and list the job boards this crawler visits.")
 
@@ -374,3 +380,50 @@ def owner_identity(config: Config) -> OwnerIdentity:
     already documents.
     """
     return load_overrides(config.pii.identity_path) or OwnerIdentity()
+
+
+@app.command("test")
+def test_sources(
+    source: Annotated[
+        str | None, typer.Argument(help="One source; all with a board if omitted")
+    ] = None,
+    config_path: Annotated[str, typer.Option("--config")] = "config.yaml",
+) -> None:
+    """Send one real request per source and say whether it answers. Writes nothing."""
+    config = in_force(cli_user.load(config_path))
+    adapters = build_sources()
+    with SqliteStore(config.db_path) as store:
+        names = [source] if source else list(sources_to_test(store, config, adapters))
+        failed = False
+        for name in names:
+            try:
+                result = try_source(store, config, adapters, name)
+            except UnknownSource:
+                typer.secho(f"no job source named {name}", fg=typer.colors.RED)
+                raise typer.Exit(code=1) from None
+            if result.ok:
+                typer.secho(
+                    f"ok   {name} — {result.fetched} found in {result.duration_ms} ms",
+                    fg=typer.colors.GREEN,
+                )
+            else:
+                failed = True
+                typer.secho(f"FAIL {name} — {result.message}", fg=typer.colors.RED)
+    if failed:
+        raise typer.Exit(code=1)
+
+
+@app.command("resume")
+def resume_command(
+    source: Annotated[str, typer.Argument(help="A paused source")],
+    config_path: Annotated[str, typer.Option("--config")] = "config.yaml",
+) -> None:
+    """Cut a pause short, so the next run retries the source. Fetches nothing itself."""
+    config = in_force(cli_user.load(config_path))
+    with SqliteStore(config.db_path) as store:
+        try:
+            state = resume_source(store, build_sources(), source, _now())
+        except UnknownSource:
+            typer.secho(f"no job source named {source}", fg=typer.colors.RED)
+            raise typer.Exit(code=1) from None
+    typer.echo(f"{source}: {state}; the next run will retry it")

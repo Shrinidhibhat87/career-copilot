@@ -1826,6 +1826,21 @@ class SqliteStore:
         )
         self._conn.commit()
 
+    def list_source_health(self) -> dict[str, SourceHealth]:
+        names = [r["source"] for r in self._conn.execute("SELECT source FROM source_health")]
+        return {name: h for name in names if (h := self.source_health(name)) is not None}
+
+    def fetched_since(self, since: datetime) -> dict[str, int]:
+        """Jobs each source returned in successful fetches since `since`."""
+        rows = self._conn.execute(
+            """
+            SELECT source, COALESCE(SUM(fetched), 0) AS total FROM source_runs
+            WHERE ok = 1 AND observed_at >= ? GROUP BY source
+            """,
+            (since.isoformat(),),
+        )
+        return {row["source"]: int(row["total"]) for row in rows}
+
     # --- source proposals -------------------------------------------------
 
     def insert_proposal(self, proposal: SourceProposal, now: datetime) -> int | None:
