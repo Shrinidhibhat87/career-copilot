@@ -143,7 +143,7 @@ def test_migration_three_upgrades_an_existing_database(tmp_path: Path) -> None:
         """
     )
     conn.commit()
-    assert migrate(conn) == 32
+    assert migrate(conn) == 33
 
     row = conn.execute("SELECT * FROM scores").fetchone()
     # A row written before preferences existed is backfilled to the empty hash, which

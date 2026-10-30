@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from collections import Counter
 from collections.abc import Callable, Sequence
 from datetime import datetime
@@ -128,16 +129,26 @@ class DiscoverRun:
                 skipped.append(f"{target.source}:{target.identifier} (cooldown)")
                 continue
 
+            started = time.monotonic()
             try:
                 # Bounded per target, so one large board cannot be the whole run: a
                 # single Greenhouse board contributed 361 of 1071 stored rows.
                 raw_jobs = list(source.fetch(target))[: self._max_jobs_per_target]
+                fetch_ms = _millis_since(started)
             except Exception as exc:  # one broken source must not end the run
                 log.warning("source failed: %s/%s: %s", target.source, target.identifier, exc)
-                self._store.record_source_run(
-                    run_id, target.source, target.identifier, False, 0, str(exc), now
-                )
                 failure = self._read_failure(exc)
+                self._store.record_source_run(
+                    run_id,
+                    target.source,
+                    target.identifier,
+                    False,
+                    0,
+                    str(exc),
+                    now,
+                    reason=failure.reason.value,
+                    duration_ms=_millis_since(started),
+                )
                 if failure.counts:
                     self._store.save_source_health(
                         record(
@@ -185,7 +196,14 @@ class DiscoverRun:
                     qualified += 1
 
             self._store.record_source_run(
-                run_id, target.source, target.identifier, True, len(raw_jobs), None, now
+                run_id,
+                target.source,
+                target.identifier,
+                True,
+                len(raw_jobs),
+                None,
+                now,
+                duration_ms=fetch_ms,
             )
             self._store.save_source_health(record(health, target.source, True, now, self._health))
             self._store.set_cooldown(target.source, target.identifier, now, target.cooldown_hours)
@@ -244,3 +262,7 @@ class DiscoverRun:
             self._store.update_run_progress(run_id, progress, self._clock())
             if self._progress:
                 self._progress(progress)
+
+
+def _millis_since(started: float) -> int:
+    return round((time.monotonic() - started) * 1000)

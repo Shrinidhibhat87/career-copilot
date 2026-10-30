@@ -38,7 +38,7 @@ from career_copilot.domain.runs import Progress, RunConfig, RunInProgress, stall
 from career_copilot.domain.sample_roles import SampleRole
 from career_copilot.domain.scoring import Score, ScoredJob, ScoreVerdict
 from career_copilot.domain.search_profile import SearchProfile
-from career_copilot.domain.source_health import FailureReason, SourceHealth
+from career_copilot.domain.source_health import FailureReason, SourceHealth, explain
 from career_copilot.domain.sources import (
     BoardVisit,
     CompanyRef,
@@ -1147,7 +1147,7 @@ class SqliteStore:
         ).fetchone()
         failures = self._conn.execute(
             """
-            SELECT source, identifier, error FROM source_runs
+            SELECT source, identifier, error, reason FROM source_runs
             WHERE run_id = (SELECT MAX(run_id) FROM source_runs) AND ok = 0
             ORDER BY source, identifier
             """
@@ -1160,7 +1160,8 @@ class SqliteStore:
             scored_jobs=int(scored["n"] or 0),
             manual_review=int(counts["manual_review"] or 0),
             failed_sources=tuple(
-                f"{row['source']}:{row['identifier']} — {row['error'] or 'unknown error'}"
+                f"{row['source']}:{row['identifier']} — "
+                f"{explain(row['reason']) or row['error'] or 'unknown error'}"
                 for row in failures
             ),
             watchlist_unresolved=tuple(
@@ -1583,10 +1584,11 @@ class SqliteStore:
             {
                 "source": r["source"],
                 "identifier": r["identifier"],
-                "message": "Source could not be fetched. Try again later.",
+                "message": explain(r["reason"]) or "Source could not be fetched. Try again later.",
             }
             for r in self._conn.execute(
-                "SELECT source, identifier FROM source_runs WHERE run_id=? AND ok=0", (run_id,)
+                "SELECT source, identifier, reason FROM source_runs WHERE run_id=? AND ok=0",
+                (run_id,),
             )
         ]
         if result["kind"] == "company_sync":
@@ -1694,14 +1696,27 @@ class SqliteStore:
         fetched: int,
         error: str | None,
         now: datetime,
+        reason: str | None = None,
+        duration_ms: int | None = None,
     ) -> None:
         """Every attempt is recorded so a silent failure never reads as zero jobs."""
         self._conn.execute(
             """
-            INSERT INTO source_runs (run_id, source, identifier, ok, fetched, error, observed_at)
-            VALUES (?,?,?,?,?,?,?)
+            INSERT INTO source_runs
+                (run_id, source, identifier, ok, fetched, error, observed_at, reason, duration_ms)
+            VALUES (?,?,?,?,?,?,?,?,?)
             """,
-            (run_id, source, identifier, int(ok), fetched, error, now.isoformat()),
+            (
+                run_id,
+                source,
+                identifier,
+                int(ok),
+                fetched,
+                error,
+                now.isoformat(),
+                reason,
+                duration_ms,
+            ),
         )
         self._conn.commit()
 
