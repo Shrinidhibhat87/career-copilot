@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from career_copilot.domain.ad_text import clean_ad
 from career_copilot.domain.models import JobPosting
 from career_copilot.ports import LLMClient
 
@@ -93,13 +94,13 @@ class OutlineAgent:
         return (
             f"Title: {posting.title}\n"
             f"Company: {posting.company}\n\n"
-            f"POSTING\n{posting.description[:DESCRIPTION_CHARS]}\n"
+            f"POSTING\n{clean_ad(posting.description)[:DESCRIPTION_CHARS]}\n"
         )
 
     def outline(self, posting: JobPosting) -> Outline:
         response = self._client.complete(self.build_prompt(posting), SCHEMA, system=SYSTEM)
         # Grounded against what the model was shown, not the whole text.
-        shown = posting.description[:DESCRIPTION_CHARS]
+        shown = clean_ad(posting.description)[:DESCRIPTION_CHARS]
         responsibilities = ground(response.data.get("responsibilities"), shown)
         requirements = ground(response.data.get("requirements"), shown)
         if not responsibilities and not requirements:

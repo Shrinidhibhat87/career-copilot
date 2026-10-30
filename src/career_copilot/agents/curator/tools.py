@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
+from career_copilot.domain.ad_text import clean_ad
 from career_copilot.domain.models import StoredJob
 from career_copilot.usecases.rank import cosine
 
@@ -50,7 +51,7 @@ def get_job(deps: CuratorDeps, job_id: int) -> str:
     job = deps.job(job_id)
     if job is None:
         return f"refused: job {job_id} is not in the pool"
-    return f"{line(job)}\n{job.posting.description[:JOB_PREVIEW_CHARS]}"
+    return f"{line(job)}\n{clean_ad(job.posting.description)[:JOB_PREVIEW_CHARS]}"
 
 
 def shortlist(deps: CuratorDeps, job_id: int, reason: str) -> str:

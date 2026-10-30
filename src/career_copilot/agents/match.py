@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 
 from career_copilot.agents import as_tuple, prompt_hash
+from career_copilot.domain.ad_text import clean_ad
 from career_copilot.domain.models import JobPosting
 from career_copilot.domain.profile import Profile
 from career_copilot.domain.scoring import (
@@ -169,7 +170,7 @@ class MatchAgent:
             f"Location: {posting.location or 'not stated'}\n"
             f"Employment type: {posting.employment_type or 'not stated'}\n"
             f"URL: {posting.canonical_url}\n\n"
-            f"{posting.description}\n"
+            f"{clean_ad(posting.description)}\n"
         )
 
     def evaluate(self, posting: JobPosting) -> MatchResult:
