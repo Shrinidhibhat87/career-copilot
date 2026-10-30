@@ -1,0 +1,133 @@
+{
+  "ergebnisliste": [
+    {
+      "stellenangebotsart": "ARBEIT",
+      "stellenangebotsTitel": "Senior Python Developer – Microservices & Data Pipelines (m/w/d)",
+      "quereinstiegGeeignet": false,
+      "arbeitszeitSchichtNachtWochenende": false,
+      "arbeitszeitTeilzeitAbend": false,
+      "arbeitszeitTeilzeitNachmittag": false,
+      "arbeitszeitTeilzeitVormittag": false,
+      "arbeitszeitTeilzeitFlexibel": false,
+      "arbeitszeitVollzeit": true,
+      "eintrittszeitraum": {
+        "von": "2026-10-27"
+      },
+      "verguetungsangabe": "KEINE_ANGABEN",
+      "vertragsdauer": "KEINE_ANGABE",
+      "istGeringfuegigeBeschaeftigung": false,
+      "stellenlokationen": [
+        {
+          "adresse": {
+            "plz": "12489",
+            "ort": "Berlin",
+            "region": "BERLIN",
+            "land": "DEUTSCHLAND"
+          },
+          "breite": 52.4359203,
+          "laenge": 13.5423415
+        }
+      ],
+      "homeofficemoeglich": false,
+      "veroeffentlichungszeitraum": {
+        "von": "2026-10-27"
+      },
+      "datumErsteVeroeffentlichung": "2026-10-27",
+      "aenderungsdatum": "2026-10-27T07:06:19.137",
+      "externeURL": "https://gute-jobs.de/viewjob-8nrcs?utm_source=jsba-premium&utm_medium=n-a&utm_campaign=jsba-premium&utm_term=senior-python-developer-microservices-data-pipelines-m-w-d",
+      "hauptberuf": "Softwareentwickler/in",
+      "firma": "BWI GmbH",
+      "referenznummer": "12336-a26f539j0456738-S",
+      "entfernung": 12,
+      "alleBerufe": [
+        "Softwareentwickler/in"
+      ]
+    },
+    {
+      "stellenangebotsart": "ARBEIT",
+      "stellenangebotsTitel": "Software Development Specialist (Python) Machine Learning for Railway Traffic Optimization (w/m/d)",
+      "quereinstiegGeeignet": false,
+      "arbeitszeitTeilzeitAbend": true,
+      "arbeitszeitTeilzeitNachmittag": true,
+      "arbeitszeitTeilzeitVormittag": true,
+      "arbeitszeitVollzeit": true,
+      "eintrittszeitraum": {
+        "von": "2026-12-01"
+      },
+      "verguetungsangabe": "KEINE_ANGABEN",
+      "vertragsdauer": "BEFRISTET",
+      "befristungInMonaten": 12,
+      "istGeringfuegigeBeschaeftigung": false,
+      "stellenlokationen": [
+        {
+          "adresse": {
+            "plz": "10789",
+            "ort": "Berlin",
+            "region": "BERLIN",
+            "land": "DEUTSCHLAND"
+          },
+          "breite": 52.501586474,
+          "laenge": 13.337444575
+        }
+      ],
+      "chiffrenummer": "PBN61169",
+      "veroeffentlichungszeitraum": {
+        "von": "2026-10-23"
+      },
+      "datumErsteVeroeffentlichung": "2026-10-23",
+      "aenderungsdatum": "2026-10-23T17:16:18.895",
+      "hauptberuf": "Machine Learning Engineer",
+      "firma": "DB Zeitarbeit GmbH",
+      "arbeitgeberKundennummerHash": "pFUKgECj9AUv1Hu4fiXArdXnmznS22U4gDkw2is8USo=",
+      "referenznummer": "12456-1646723-1-S",
+      "entfernung": 6,
+      "alleBerufe": [
+        "Machine Learning Engineer"
+      ]
+    },
+    {
+      "stellenangebotsart": "ARBEIT",
+      "stellenangebotsTitel": "Organisationsprogrammierer  - Callcenter (m/w/d)",
+      "quereinstiegGeeignet": false,
+      "arbeitszeitVollzeit": true,
+      "eintrittszeitraum": {
+        "von": "2026-10-30"
+      },
+      "verguetungsangabe": "STUNDENLOHN",
+      "artDerVerguetung": "FESTGEHALT",
+      "festgehalt": 13.9,
+      "vertragsdauer": "KEINE_ANGABE",
+      "istGeringfuegigeBeschaeftigung": false,
+      "stellenlokationen": [
+        {
+          "adresse": {
+            "plz": "10997",
+            "ort": "Berlin",
+            "region": "BERLIN",
+            "land": "DEUTSCHLAND"
+          },
+          "breite": 52.500818073,
+          "laenge": 13.433452445
+        }
+      ],
+      "veroeffentlichungszeitraum": {
+        "von": "2026-10-27"
+      },
+      "datumErsteVeroeffentlichung": "2026-10-27",
+      "aenderungsdatum": "2026-10-27T16:32:12.023",
+      "hauptberuf": "Organisationsprogrammierer/in",
+      "alternativBeruf1": "Callcenteragent/in",
+      "firma": "PerZukunft Arbeitsvermittlung GmbH & Co. KG",
+      "arbeitgeberKundennummerHash": "K-odMSiWh6Flr85j5gueeE_9FFhpOtsHIPbrBKoeCCs=",
+      "referenznummer": "12016-10005736865-S",
+      "entfernung": 1,
+      "alleBerufe": [
+        "Organisationsprogrammierer/in",
+        "Callcenteragent/in"
+      ]
+    }
+  ],
+  "maxErgebnisse": 26,
+  "page": 1,
+  "size": 3
+}

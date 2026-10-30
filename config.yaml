@@ -126,6 +126,13 @@ filters:
 #   # a second phone number). See profile/identity.example.yaml for the shape.
 #   identity_path: profile/identity.yaml
 
+# The German federal job board (Bundesagentur für Arbeit). Free, no account. Searched from your
+# saved preferences: each role term you look for, in each allowed city, within `radius_km`.
+# With no city saved it sends nothing. Set `enabled: false` to turn it off.
+jobsuche:
+  enabled: true
+  radius_km: 25
+
 # A curated company watchlist, synced with `career-copilot sources sync`. One list at a
 # time. Resolution is deterministic probing of the real board APIs — no LLM, no search
 # spend — and a resolved company is crawled on the next run with no approval step.

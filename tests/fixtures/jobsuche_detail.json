@@ -1,0 +1,116 @@
+{
+  "stellenangebotsart": "ARBEIT",
+  "stellenangebotsTitel": "Senior Python Developer – Microservices & Data Pipelines (m/w/d)",
+  "quereinstiegGeeignet": false,
+  "stellenangebotsBeschreibung": "Gesucht wird ein **Senior Python Developer** mit über 5 Jahren Backend-Erfahrung für den Betrieb einer **containerisierten Microservicearchitektur**. Aufgaben umfassen **API-Design**, Refactoring sowie Cross-Team-Kollaboration. Kenntnisse in **FastAPI**, **PostgreSQL**, **Kubernetes** und agilen Methoden sind erforderlich.",
+  "arbeitszeitSchichtNachtWochenende": false,
+  "arbeitszeitTeilzeitAbend": false,
+  "arbeitszeitTeilzeitNachmittag": false,
+  "arbeitszeitTeilzeitVormittag": false,
+  "arbeitszeitTeilzeitFlexibel": false,
+  "arbeitszeitVollzeit": true,
+  "eintrittszeitraum": {
+    "von": "2026-10-27"
+  },
+  "verguetungsangabe": "KEINE_ANGABEN",
+  "vertragsdauer": "KEINE_ANGABE",
+  "istGeringfuegigeBeschaeftigung": false,
+  "istBehinderungGefordert": false,
+  "stellenlokationen": [
+    {
+      "adresse": {
+        "plz": "12489",
+        "ort": "Berlin",
+        "region": "BERLIN",
+        "land": "DEUTSCHLAND"
+      },
+      "breite": 52.4359203,
+      "laenge": 13.5423415
+    },
+    {
+      "adresse": {
+        "plz": "22587",
+        "ort": "Hamburg",
+        "region": "HAMBURG",
+        "land": "DEUTSCHLAND"
+      },
+      "breite": 53.5662274,
+      "laenge": 9.8038402
+    },
+    {
+      "adresse": {
+        "plz": "60486",
+        "ort": "Frankfurt am Main",
+        "region": "HESSEN",
+        "land": "DEUTSCHLAND"
+      },
+      "breite": 50.1143251,
+      "laenge": 8.629914
+    },
+    {
+      "adresse": {
+        "plz": "53117",
+        "ort": "Bonn",
+        "region": "NORDRHEIN_WESTFALEN",
+        "land": "DEUTSCHLAND"
+      },
+      "breite": 50.7554028,
+      "laenge": 7.071347
+    },
+    {
+      "adresse": {
+        "plz": "90402",
+        "ort": "Nürnberg, Mittelfranken",
+        "region": "BAYERN",
+        "land": "DEUTSCHLAND"
+      },
+      "breite": 49.4508466,
+      "laenge": 11.0896213
+    },
+    {
+      "adresse": {
+        "plz": "89075",
+        "ort": "Ulm, Donau",
+        "region": "BADEN_WUERTTEMBERG",
+        "land": "DEUTSCHLAND"
+      },
+      "breite": 48.3906475,
+      "laenge": 9.9558042
+    },
+    {
+      "adresse": {
+        "plz": "04109",
+        "ort": "Leipzig",
+        "region": "SACHSEN",
+        "land": "DEUTSCHLAND"
+      },
+      "breite": 51.3390296,
+      "laenge": 12.3665008
+    },
+    {
+      "adresse": {
+        "plz": "80637",
+        "ort": "München",
+        "region": "BAYERN",
+        "land": "DEUTSCHLAND"
+      },
+      "breite": 48.1607027,
+      "laenge": 11.5380108
+    }
+  ],
+  "homeofficemoeglich": false,
+  "istPrivateArbeitsvermittlung": false,
+  "istArbeitnehmerUeberlassung": false,
+  "veroeffentlichungszeitraum": {
+    "von": "2026-10-27"
+  },
+  "datumErsteVeroeffentlichung": "2026-10-27",
+  "aenderungsdatum": "2026-10-27T07:06:19.137",
+  "externeURL": "https://gute-jobs.de/viewjob-8nrcs?utm_source=jsba-premium&utm_medium=n-a&utm_campaign=jsba-premium&utm_term=senior-python-developer-microservices-data-pipelines-m-w-d",
+  "istBetreut": false,
+  "hauptberuf": "Softwareentwickler/in",
+  "firma": "BWI GmbH",
+  "allianzpartnerUrl": "www.gute-jobs.de",
+  "allianzpartnerName": "Wollmilchsau GmbH",
+  "referenznummer": "12336-a26f539j0456738-S"
+}
