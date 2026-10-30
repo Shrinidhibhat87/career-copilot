@@ -1082,6 +1082,56 @@ export const getObsFlows = (days: number, limit?: number) =>
 export const obsLogUrl = (sessionId: number) =>
   `${BASE}/api/observability/sessions/${sessionId}/log`;
 
+// --- job sources -------------------------------------------------------------
+
+export type SourceStatus = "ok" | "degraded" | "paused" | "unknown";
+
+/** One job source (a vendor or service) as `GET /api/sources/health` reports it. The
+ * `lastMessage` is the reason in words, never a raw error, so it is safe to show. */
+export type SourceHealthRow = {
+  source: string;
+  status: SourceStatus;
+  targets: number;
+  lastOkAt: string | null;
+  lastFailure: string | null;
+  lastMessage: string | null;
+  pausedUntil: string | null;
+  fetchedLast7Days: number;
+};
+
+export type SourceTestResult = {
+  ok: boolean;
+  fetched: number;
+  durationMs: number;
+  reason: string | null;
+  message: string | null;
+};
+
+async function sourcesRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${BASE}/api/sources/${path}`, {
+    cache: "no-store",
+    ...init,
+  }).catch(() => {
+    throw new Error("Could not reach the API. Check that it is running.");
+  });
+  if (!response.ok) {
+    // The server words the limit ("tested a moment ago; try again in 42 s"), so show it.
+    const body = (await response.json().catch(() => null)) as {
+      detail?: { errors?: { source?: string } };
+    } | null;
+    throw new Error(body?.detail?.errors?.source ?? "The request failed. Try again.");
+  }
+  return (await response.json()) as T;
+}
+
+export const getSourceHealth = () => sourcesRequest<SourceHealthRow[]>("health");
+export const testSource = (name: string) =>
+  sourcesRequest<SourceTestResult>(`${encodeURIComponent(name)}/test`, { method: "POST" });
+export const resumeSource = (name: string) =>
+  sourcesRequest<{ status: SourceStatus }>(`${encodeURIComponent(name)}/resume`, {
+    method: "POST",
+  });
+
 // --- recycle bin -------------------------------------------------------------
 
 /** A dismissed job still in the bin. After `daysLeft` it is cleaned and gone for good. */
