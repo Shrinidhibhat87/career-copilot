@@ -648,6 +648,23 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         ALTER TABLE source_targets ADD COLUMN open_roles INTEGER;
         """,
     ),
+    (
+        32,
+        """
+        -- Whether a whole job source (one vendor or service) is worth asking, kept apart
+        -- from the per-board `cooldowns`. paused_until is NULL while the source is open.
+        CREATE TABLE source_health (
+            source               TEXT PRIMARY KEY,
+            consecutive_failures INTEGER NOT NULL DEFAULT 0,
+            paused_until         TEXT,
+            pause_hours          INTEGER NOT NULL,
+            last_ok_at           TEXT,
+            last_failure_at      TEXT,
+            last_failure         TEXT,
+            last_message         TEXT
+        );
+        """,
+    ),
 )
 
 

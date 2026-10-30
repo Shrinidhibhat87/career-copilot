@@ -25,6 +25,7 @@ from career_copilot.domain.runs import Progress
 from career_copilot.domain.sample_roles import SampleRole
 from career_copilot.domain.scoring import Score, ScoredJob
 from career_copilot.domain.search_profile import SearchProfile
+from career_copilot.domain.source_health import SourceHealth
 from career_copilot.domain.sources import (
     BoardVisit,
     CompanyRef,
@@ -78,6 +79,10 @@ class StateStore(Protocol):
     ) -> None: ...
 
     def last_scraped_by_target(self) -> dict[tuple[str, str], datetime]: ...
+
+    def source_health(self, source: str) -> SourceHealth | None: ...
+
+    def save_source_health(self, health: SourceHealth) -> None: ...
 
     def list_board_visits(self) -> Sequence[BoardVisit]: ...
 
