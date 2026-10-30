@@ -135,3 +135,12 @@ def record(
         last_failure=reason,
         last_message=(message or "")[:200] or None,
     )
+
+
+def resume(health: SourceHealth | None, now: datetime) -> SourceHealth | None:
+    """A paused source retried on the next run. Nothing is fetched here: the pause is cut
+    short, so the next target of the source is the retry, and a failed retry still pauses
+    for twice as long. A source that is not paused is returned as it was."""
+    if health is None or not blocks(health, now):
+        return health
+    return replace(health, paused_until=now)

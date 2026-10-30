@@ -194,6 +194,13 @@ def crawl_targets(
     return targets
 
 
+def build_sources() -> dict[str, JobSource]:
+    """Every adapter a run can use: company boards first, then the searched sources."""
+    sources: dict[str, JobSource] = {name: cls() for name, cls in SOURCE_TYPES.items()}
+    sources.update({name: cls() for name, cls in SEARCH_SOURCES.items()})
+    return sources
+
+
 def build_discover_run(
     config: Config,
     store: SqliteStore,
@@ -211,10 +218,8 @@ def build_discover_run(
 
         return FastEmbedEmbedder(config.scoring.embedding_model)
 
-    sources: dict[str, JobSource] = {name: cls() for name, cls in SOURCE_TYPES.items()}
-    sources.update({name: cls() for name, cls in SEARCH_SOURCES.items()})
     return DiscoverRun(
-        sources=sources,
+        sources=build_sources(),
         store=store,
         targets=crawl_targets(config, store, frozen.preferences),
         clock=now,

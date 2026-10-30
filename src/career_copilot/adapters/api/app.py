@@ -37,6 +37,7 @@ from career_copilot.adapters.api import (
     review,
     runs,
     sample_roles,
+    source_health,
     source_lookup,
 )
 from career_copilot.adapters.llm.backends import BackendUnavailable, build_client
@@ -131,6 +132,7 @@ def _in_force() -> Config:
 app = FastAPI(title="Career Copilot", lifespan=_lifespan)
 app.include_router(runs.router(_in_force))
 app.include_router(health.router(_in_force))
+app.include_router(source_health.router(lambda: _user_config()))
 app.include_router(model_settings.router(lambda: _user_config()))
 app.include_router(observability.router(lambda: _user_config()))
 app.include_router(review.router(lambda: _user_config()))

@@ -72,6 +72,7 @@ ALTER TABLE source_runs ADD COLUMN duration_ms INTEGER;
 ```
 GET  /api/sources/health               → [{source, status, targets, lastOkAt, lastFailure, lastMessage,
                                            pausedUntil, fetchedLast7Days}]
+                                         # lastMessage is the reason in words, never the raw error
 POST /api/sources/{source}/test        → {ok, fetched, durationMs, reason?, message?}
 POST /api/sources/{source}/resume      → {status}
 career-copilot sources test [SOURCE]   career-copilot sources resume SOURCE
