@@ -158,3 +158,17 @@ def test_the_migration_adds_the_table_to_an_existing_database(tmp_path: Any) -> 
         conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", (version,))
     assert migrate(conn) >= 32
     assert conn.execute("SELECT COUNT(*) FROM source_health").fetchone()[0] == 0
+
+
+def test_removed_boards_never_pause_the_source_and_say_why(store: SqliteStore) -> None:
+    request = httpx.Request("GET", "https://boards-api.greenhouse.io/v1/boards/altium/jobs")
+    gone = httpx.HTTPStatusError(
+        "404", request=request, response=httpx.Response(404, request=request)
+    )
+    flaky = Flaky("greenhouse", gone)
+    report = run(store, {"greenhouse": flaky}, boards("greenhouse", 5), T0)
+    assert flaky.calls == 5 and not any("source paused" in s for s in report.skipped_targets)
+    reasons = {r["reason"] for r in store._conn.execute("SELECT reason FROM source_runs")}
+    assert reasons == {"not_found"}
+    health = store.source_health("greenhouse")
+    assert health is None or health.consecutive_failures == 0

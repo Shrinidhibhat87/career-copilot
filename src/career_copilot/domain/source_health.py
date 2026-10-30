@@ -24,6 +24,8 @@ class FailureReason(StrEnum):
     FORBIDDEN = "forbidden"
     SERVER_ERROR = "server_error"
     BAD_RESPONSE = "bad_response"
+    # The board is gone (HTTP 404/410): a problem with that board, not with the source.
+    NOT_FOUND = "not_found"
 
 
 # What the run view and the digest say for each reason, in place of a raw error that can be
@@ -35,6 +37,7 @@ REASON_TEXT: dict[str, str] = {
     FailureReason.FORBIDDEN: "refused access",
     FailureReason.SERVER_ERROR: "had an error on its side",
     FailureReason.BAD_RESPONSE: "answered something unexpected",
+    FailureReason.NOT_FOUND: "no longer exists (the company may have removed its board)",
 }
 
 

@@ -18,6 +18,9 @@ const STATUS_LABEL: Record<SourceStatus, string> = {
   unknown: "Not tried yet",
 };
 
+// A test never writes anything, so the row's own columns stay as the last real run left them.
+const TEST_ONLY = "Test only, nothing was saved.";
+
 function when(value: string | null): string {
   if (!value) return "—";
   return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
@@ -67,8 +70,8 @@ export function SourceHealth() {
       note(
         source,
         result.ok
-          ? `Answered: ${result.fetched} found in ${result.durationMs} ms.`
-          : `Did not work: ${result.message ?? "no reason given"}.`,
+          ? `Answered: ${result.fetched} found in ${result.durationMs} ms. ${TEST_ONLY} Last success updates after the next run.`
+          : `Did not work: ${result.message ?? "no reason given"}. ${TEST_ONLY}`,
         result.ok,
       );
     } catch (failure) {
