@@ -69,7 +69,7 @@ class Fetcher(Protocol):
 
 
 # Hosts that answer a burst of probes with 429 get a minimum gap between requests.
-_MIN_INTERVAL_SECONDS = {"apply.workable.com": 1.0}
+_MIN_INTERVAL_SECONDS = {"apply.workable.com": 1.0, "rest.arbeitsagentur.de": 1.0}
 _MAX_429_RETRIES = 2
 _MAX_RETRY_WAIT_SECONDS = 10.0
 
@@ -133,7 +133,11 @@ def _blocked(url: str) -> httpx.HTTPStatusError:
     return httpx.HTTPStatusError("host is rate-limiting us", request=request, response=response)
 
 
-def http_fetcher(timeout: float = 20.0, throttle: HostThrottle | None = None) -> Fetcher:
+def http_fetcher(
+    timeout: float = 20.0,
+    throttle: HostThrottle | None = None,
+    headers: dict[str, str] | None = None,
+) -> Fetcher:
     throttle = throttle or _THROTTLE
 
     def fetch(url: str) -> Any:
@@ -144,7 +148,7 @@ def http_fetcher(timeout: float = 20.0, throttle: HostThrottle | None = None) ->
             raise _blocked(url)
         for attempt in range(_MAX_429_RETRIES + 1):
             throttle.wait(host)
-            response = httpx.get(url, timeout=timeout, follow_redirects=True)
+            response = httpx.get(url, timeout=timeout, follow_redirects=True, headers=headers)
             if response.status_code != 429 or attempt == _MAX_429_RETRIES:
                 break
             wait = _retry_wait(response, attempt)

@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from career_copilot.adapters import cli_user
 from career_copilot.adapters.cli_models import app as models_app
 from career_copilot.adapters.cli_sources import app as sources_app
+from career_copilot.adapters.sources.jobsuche import SEARCH_SOURCES
 from career_copilot.adapters.store.sqlite_store import SqliteStore, process_started_at
 from career_copilot.config import Config, resolve_models
 from career_copilot.domain.models import FilterOutcome
@@ -329,8 +330,26 @@ def doctor(
         fg=typer.colors.GREEN if pii.usable else typer.colors.RED,
     )
     cv_ok = _report_cv(config)
+    _report_sources(config)
     if not (report.ok and cv_ok):
         raise typer.Exit(code=1)
+
+
+def _report_sources(config: Config) -> None:
+    """One request per searched source, to see it answers. A source being down is a warning,
+    not a failure: `score` works on what is already stored."""
+    if not config.jobsuche.enabled:
+        return
+    for name, source_class in SEARCH_SOURCES.items():
+        try:
+            total = source_class().ping()
+        except Exception as error:
+            typer.secho(f"warn source {name} — not reachable: {error}", fg=typer.colors.YELLOW)
+        else:
+            typer.secho(
+                f"ok   source {name} — reachable ({total} postings match a test search)",
+                fg=typer.colors.GREEN,
+            )
 
 
 def _report_cv(config: Config) -> bool:

@@ -285,6 +285,14 @@ class CsvListSpec(BaseModel):
     path: str = ""
 
 
+class JobsucheSpec(BaseModel):
+    """The German federal job board, searched from the saved preferences (role terms and
+    allowed cities). On by default; it only ever sends a request when a city is saved."""
+
+    enabled: bool = True
+    radius_km: int = 25
+
+
 class CompanyListsSpec(BaseModel):
     """Where a curated watchlist comes from. One list at a time, by design: a second
     would need a merge policy for the same company appearing in both."""
@@ -331,6 +339,7 @@ class Config(BaseModel):
     models: ModelsSpec = Field(default_factory=ModelsSpec)
     discovery: DiscoverySpec = Field(default_factory=DiscoverySpec)
     company_lists: CompanyListsSpec = Field(default_factory=CompanyListsSpec)
+    jobsuche: JobsucheSpec = Field(default_factory=JobsucheSpec)
     notion: NotionSpec = Field(default_factory=NotionSpec)
     targets: list[TargetSpec] = Field(default_factory=list)
     # Which model profile was overlaid on `models:`, and why. Set by `load`, never read

@@ -205,7 +205,7 @@ def list_targets(
     config = in_force(cli_user.load(config_path))
     with SqliteStore(config.db_path) as store:
         origins = store.imported_target_origins()
-        for target in crawl_targets(config, store):
+        for target in crawl_targets(config, store, current_preferences(store, config)):
             # A board absent from source_targets came from the config.yaml seed.
             origin = origins.get((target.source, target.identifier), "config")
             typer.echo(f"{target.source}/{target.identifier}  ({origin}, tier {target.tier})")
