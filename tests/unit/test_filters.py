@@ -139,9 +139,9 @@ def test_remote_among_other_places_passes() -> None:
 
 
 @pytest.mark.parametrize("location", ["Remote US, West Coast", "Remote Canada"])
-def test_remote_limited_to_a_region_is_flagged_as_non_german(location: str) -> None:
+def test_remote_limited_to_a_region_is_flagged_as_outside_the_market(location: str) -> None:
     result = apply_hard_filters(to_posting(make_raw(location=location)))
-    assert any("remote role with non-German location" in w for w in result.warnings)
+    assert any("remote role with location outside Germany" in w for w in result.warnings)
 
 
 def test_munich_passes_with_a_warning() -> None:

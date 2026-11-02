@@ -17,6 +17,7 @@ from datetime import datetime
 from typing import Any, Literal, get_args
 
 from career_copilot.domain.filters import FilterConfig
+from career_copilot.domain.markets import Market
 
 CefrLevel = Literal["A1", "A2", "B1", "B2", "C1", "C2", "native"]
 SeniorityBand = Literal["junior", "mid", "senior", "staff", "lead"]
@@ -100,9 +101,10 @@ class Preferences:
 
     # --- derivations ------------------------------------------------------
 
-    def to_filter_config(self) -> FilterConfig:
-        """The deterministic rules' whole input. Previously `FilterSpec.to_filter_config`."""
-        return FilterConfig(
+    def to_filter_config(self, markets: tuple[Market, ...] | None = None) -> FilterConfig:
+        """The deterministic rules' whole input. Previously `FilterSpec.to_filter_config`.
+        `markets` are the ones the account searches in; none given means Germany."""
+        config = FilterConfig(
             allowed_cities=frozenset(self.allowed_cities),
             preferred_cities=frozenset(self.preferred_cities),
             flagged_cities=frozenset(self.flagged_cities),
@@ -116,6 +118,7 @@ class Preferences:
             seniority_bands=tuple(self.seniority),
             language_levels=tuple((language.key, language.level) for language in self.languages),
         )
+        return replace(config, markets=markets) if markets else config
 
     def to_prompt_block(self) -> str:
         """The `PREFERENCES` block both agents embed, notes included verbatim.

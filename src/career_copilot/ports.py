@@ -10,6 +10,7 @@ from typing import Protocol, runtime_checkable
 
 from career_copilot.domain.cv import SavedCv, StoredCv
 from career_copilot.domain.intent import IntentEntry, IntentKind
+from career_copilot.domain.markets import MarketSetting
 from career_copilot.domain.models import (
     DigestStats,
     FilterOutcome,
@@ -81,6 +82,8 @@ class StateStore(Protocol):
     ) -> None: ...
 
     def last_scraped_by_target(self) -> dict[tuple[str, str], datetime]: ...
+
+    def market_setting(self) -> MarketSetting | None: ...
 
     def source_health(self, source: str) -> SourceHealth | None: ...
 

@@ -17,6 +17,7 @@ import re
 from dataclasses import dataclass, field
 from functools import lru_cache
 
+from career_copilot.domain.markets import MARKETS, Market
 from career_copilot.domain.models import FilterOutcome, HardFilterResult, JobPosting
 from career_copilot.domain.normalize import location_segments
 
@@ -99,17 +100,22 @@ _ELIGIBILITY_AMBIGUOUS = re.compile(
     r"|background\s+check|arbeitserlaubnis)\b",
 )
 
+
 # --- Relocation -----------------------------------------------------------
-_RELOCATION_REQUIRED = re.compile(
-    r"\b(relocation\s+(?:to|is)\s+(?!germany|berlin|munich)|must\s+relocate"
-    r"|onsite\s+in\s+(?!germany|berlin|munich|münchen)\w+)\b",
-)
+@lru_cache(maxsize=32)
+def _relocation_required(places: tuple[str, ...]) -> re.Pattern[str]:
+    """Relocation or onsite work somewhere that is not one of `places` (the person's own)."""
+    known = "|".join(re.escape(place) for place in places)
+    return re.compile(
+        rf"\b(relocation\s+(?:to|is)\s+(?!{known})|must\s+relocate|onsite\s+in\s+(?!{known})\w+)\b"
+    )
 
 
 @dataclass(frozen=True, slots=True)
 class FilterConfig:
     """Tunable inputs to the hard filters."""
 
+    markets: tuple[Market, ...] = (MARKETS["DE"],)
     allowed_countries: frozenset[str] = frozenset({"germany", "deutschland", "de"})
     allowed_cities: frozenset[str] = frozenset(
         {"berlin", "munich", "hamburg", "cologne", "frankfurt", "remote", ""}
@@ -207,6 +213,13 @@ class FilterConfig:
     # (language key, CEFR level) for what the user *has*. Only German is consulted.
     language_levels: tuple[tuple[str, str], ...] = (("english", "C2"), ("german", "B1"))
 
+    def country_words(self) -> tuple[str, ...]:
+        return tuple(w for m in self.markets for w in (*m.country_words, m.code.lower()))
+
+    def outside(self) -> str:
+        """Where a rejected place is not: the one market's name, or "your markets"."""
+        return self.markets[0].name if len(self.markets) == 1 else "your markets"
+
 
 @dataclass
 class _Verdict:
@@ -241,6 +254,8 @@ def _demanded_level(demand: str) -> str:
 
 
 def _check_language(low: str, cfg: FilterConfig, v: _Verdict) -> None:
+    if GERMAN not in {m.language for m in cfg.markets}:
+        return
     # Both German patterns are alternations with bounded `[^.]{0,50}` spans, and roughly
     # half of all postings name no German at all. One substring test skips them.
     if "german" not in low and "deutsch" not in low:
@@ -397,7 +412,7 @@ def _check_location(posting: JobPosting, low: str, cfg: FilterConfig, v: _Verdic
     segment only, and a rule that saw just that would drop every posting whose board lists
     Berlin second.
     """
-    segments = location_segments(posting.location)
+    segments = location_segments(posting.location, cfg.country_words())
     if not segments:
         v.review.append("location missing")
         return
@@ -418,12 +433,13 @@ def _check_location(posting: JobPosting, low: str, cfg: FilterConfig, v: _Verdic
         v.reasons.append("remote not allowed by config")
         return
     if posting.remote and cfg.allow_remote:
-        v.warnings.append(f"remote role with non-German location: {posting.location}")
+        v.warnings.append(f"remote role with location outside {cfg.outside()}: {posting.location}")
         return
-    if _RELOCATION_REQUIRED.search(low):
+    known = (*cfg.country_words(), *(c for c in cfg.allowed_cities if c and c != "remote"))
+    if _relocation_required(known).search(low):
         v.reasons.append(f"relocation required to {posting.location}")
         return
-    v.reasons.append(f"location outside Germany: {posting.location}")
+    v.reasons.append(f"location outside {cfg.outside()}: {posting.location}")
 
 
 def apply_hard_filters(posting: JobPosting, cfg: FilterConfig | None = None) -> HardFilterResult:

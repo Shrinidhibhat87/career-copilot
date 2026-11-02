@@ -27,7 +27,6 @@ from career_copilot.agents.triage import TriageAgent
 from career_copilot.config import Config
 from career_copilot.domain.budget import BudgetExceeded
 from career_copilot.domain.diversity import cap_per_company
-from career_copilot.domain.markets import enabled
 from career_copilot.domain.models import SourceTarget
 from career_copilot.domain.preference_note import build_preference_note
 from career_copilot.domain.preferences import Preferences, bootstrap
@@ -49,6 +48,7 @@ from career_copilot.usecases.cv import MISSING_MESSAGE, ensure_current_cv
 from career_copilot.usecases.digest import DigestRun
 from career_copilot.usecases.discover import DiscoverRun
 from career_copilot.usecases.funnel import build_funnel
+from career_copilot.usecases.markets import enabled_markets
 from career_copilot.usecases.preferences import load_preferences
 from career_copilot.usecases.repost_guard import hide_reposts
 from career_copilot.usecases.score import (
@@ -190,12 +190,9 @@ def crawl_targets(
         if (target.source, target.identifier) not in seen:
             targets.append(target)
     if preferences is not None and config.jobsuche.enabled:
-        setting = store.market_setting()
         # shortcut: one radius for every searched source, because jobsuche is the only one;
         # give each pack its own radius (Market.radius_km) when a second source arrives.
-        for source in dict.fromkeys(
-            m_source for m in enabled(setting.codes if setting else ()) for m_source in m.sources
-        ):
+        for source in dict.fromkeys(s for m in enabled_markets(store) for s in m.sources):
             targets.extend(search_targets(source, preferences, radius_km=config.jobsuche.radius_km))
     return targets
 
@@ -229,7 +226,7 @@ def build_discover_run(
         store=store,
         targets=crawl_targets(config, store, frozen.preferences),
         clock=now,
-        filter_config=frozen.preferences.to_filter_config(),
+        filter_config=frozen.preferences.to_filter_config(enabled_markets(store)),
         stop_after=config.stop_after if store.has_jobs() else config.initial_target,
         max_jobs_per_target=config.max_jobs_per_target,
         run_id=run_id,
