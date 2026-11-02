@@ -1132,6 +1132,39 @@ export const resumeSource = (name: string) =>
     method: "POST",
   });
 
+// --- markets -----------------------------------------------------------------
+
+export type MarketPack = { code: string; name: string; language: string; ready: boolean };
+
+/** `enabled` is what runs use now; until `confirmed`, that is the default, not a choice. */
+export type MarketsView = {
+  packs: MarketPack[];
+  enabled: string[];
+  confirmed: boolean;
+  proposal: string[];
+};
+
+async function marketsRequest(init?: RequestInit): Promise<MarketsView> {
+  const response = await fetch(`${BASE}/api/markets`, { cache: "no-store", ...init }).catch(() => {
+    throw new Error("Could not reach the API. Check that it is running.");
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as {
+      detail?: { errors?: { codes?: string } };
+    } | null;
+    throw new Error(body?.detail?.errors?.codes ?? "The request failed. Try again.");
+  }
+  return (await response.json()) as MarketsView;
+}
+
+export const getMarkets = () => marketsRequest();
+export const saveMarkets = (codes: string[]) =>
+  marketsRequest({
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ codes }),
+  });
+
 // --- recycle bin -------------------------------------------------------------
 
 /** A dismissed job still in the bin. After `daysLeft` it is cleaned and gone for good. */

@@ -23,6 +23,7 @@ from career_copilot.domain.runs import RunInProgress
 from career_copilot.usecases.compare_backends import compare as compare_exports
 from career_copilot.usecases.compare_backends import export_top
 from career_copilot.usecases.doctor import diagnose, profile_line, start_hint
+from career_copilot.usecases.markets import enabled_markets
 from career_copilot.usecases.model_settings import in_force
 from career_copilot.usecases.pipeline import (
     PipelineRun,
@@ -332,9 +333,18 @@ def doctor(
         fg=typer.colors.GREEN if pii.usable else typer.colors.RED,
     )
     cv_ok = _report_cv(config)
+    _report_markets(config)
     _report_sources(config)
     if not (report.ok and cv_ok):
         raise typer.Exit(code=1)
+
+
+def _report_markets(config: Config) -> None:
+    """Which countries runs search in, and whether the person confirmed them."""
+    with SqliteStore(config.db_path) as store:
+        confirmed = store.market_setting() is not None
+        names = ", ".join(m.code for m in enabled_markets(store))
+    typer.echo(f"--   markets {names} ({'confirmed' if confirmed else 'default, not confirmed'})")
 
 
 def _report_sources(config: Config) -> None:

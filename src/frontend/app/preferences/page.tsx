@@ -1,4 +1,5 @@
 import { AppHeader } from "@/components/app-header";
+import { MarketsSection } from "@/components/markets-section";
 import { PreferencesForm } from "@/components/preferences-form";
 
 export default function PreferencesPage() {
@@ -13,6 +14,7 @@ export default function PreferencesPage() {
             These decide what gets collected, what is thrown out before any model sees it, and
             what the model is told you want. Saving re-checks the postings already stored.
           </p>
+          <MarketsSection />
           <PreferencesForm />
         </section>
       </main>

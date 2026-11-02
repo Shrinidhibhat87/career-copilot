@@ -105,3 +105,14 @@ def test_a_searched_source_that_works_is_reported_by_its_live_check_only(
     out = lines(capsys)
     assert not any("working," in line for line in out)
     assert any(line.startswith("ok   source jobsuche — reachable (7 postings") for line in out)
+
+
+def test_doctor_says_which_markets_are_searched(
+    config: Config, capsys: CaptureFixture[str]
+) -> None:
+    cli._report_markets(config)
+    assert lines(capsys) == ["--   markets DE (default, not confirmed)"]
+    with SqliteStore(config.db_path) as store:
+        store.save_market_setting(("DE",), NOW)
+    cli._report_markets(config)
+    assert lines(capsys) == ["--   markets DE (confirmed)"]
