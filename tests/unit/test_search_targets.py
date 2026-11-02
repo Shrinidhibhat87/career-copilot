@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +15,7 @@ import career_copilot.__main__ as cli
 from career_copilot.adapters.sources.jobsuche import JobsucheSource
 from career_copilot.adapters.store.sqlite_store import SqliteStore
 from career_copilot.config import Config, JobsucheSpec
+from career_copilot.domain.markets import MARKETS
 from career_copilot.domain.preferences import Preferences
 from career_copilot.domain.search_targets import search_targets
 from career_copilot.usecases.pipeline import crawl_targets
@@ -58,6 +61,16 @@ def test_crawl_targets_adds_the_searches_after_the_seed_and_can_be_switched_off(
         off = Config(jobsuche=JobsucheSpec(enabled=False))
         assert crawl_targets(off, store, PREFS) == []
         assert crawl_targets(Config(), store) == []
+
+
+def test_searches_follow_the_enabled_markets(monkeypatch: pytest.MonkeyPatch) -> None:
+    now = datetime(2026, 8, 12, tzinfo=UTC)
+    with SqliteStore(":memory:") as store:
+        store.save_market_setting(("DE",), now)
+        assert len(crawl_targets(Config(), store, PREFS)) == 4
+        # A market whose pack lists no searched source adds no searches.
+        monkeypatch.setitem(MARKETS, "DE", replace(MARKETS["DE"], sources=()))
+        assert crawl_targets(Config(), store, PREFS) == []
 
 
 def test_ping_asks_for_one_result_and_reports_the_total() -> None:

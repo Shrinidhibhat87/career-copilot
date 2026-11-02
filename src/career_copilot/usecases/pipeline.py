@@ -17,7 +17,7 @@ from career_copilot.adapters.pii.factory import build_redactor
 from career_copilot.adapters.profile_loader import load_notes
 from career_copilot.adapters.sources.ats import SOURCE_TYPES
 from career_copilot.adapters.sources.failures import read_failure
-from career_copilot.adapters.sources.jobsuche import SEARCH_SOURCES, JobsucheSource
+from career_copilot.adapters.sources.jobsuche import SEARCH_SOURCES
 from career_copilot.adapters.store.sqlite_store import SqliteStore
 from career_copilot.agents.curator.agent import build_curator
 from career_copilot.agents.discovery.agent import build_model
@@ -27,6 +27,7 @@ from career_copilot.agents.triage import TriageAgent
 from career_copilot.config import Config
 from career_copilot.domain.budget import BudgetExceeded
 from career_copilot.domain.diversity import cap_per_company
+from career_copilot.domain.markets import enabled
 from career_copilot.domain.models import SourceTarget
 from career_copilot.domain.preference_note import build_preference_note
 from career_copilot.domain.preferences import Preferences, bootstrap
@@ -176,7 +177,8 @@ def crawl_targets(
     config: Config, store: SqliteStore, preferences: Preferences | None = None
 ) -> list[SourceTarget]:
     """The hand-written seed plus every board the user approved, then the searches the
-    saved preferences imply (given `preferences`, and unless switched off in config).
+    saved preferences imply for each enabled market (given `preferences`, and unless switched
+    off in config).
 
     `config.yaml` stays the user's own list and is never rewritten by a run; approved
     proposals live in the store. Order is seed first, so an approved board cannot push
@@ -188,9 +190,13 @@ def crawl_targets(
         if (target.source, target.identifier) not in seen:
             targets.append(target)
     if preferences is not None and config.jobsuche.enabled:
-        targets.extend(
-            search_targets(JobsucheSource.name, preferences, radius_km=config.jobsuche.radius_km)
-        )
+        setting = store.market_setting()
+        # shortcut: one radius for every searched source, because jobsuche is the only one;
+        # give each pack its own radius (Market.radius_km) when a second source arrives.
+        for source in dict.fromkeys(
+            m_source for m in enabled(setting.codes if setting else ()) for m_source in m.sources
+        ):
+            targets.extend(search_targets(source, preferences, radius_km=config.jobsuche.radius_km))
     return targets
 
 
