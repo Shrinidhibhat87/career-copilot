@@ -67,6 +67,7 @@ from career_copilot.domain.resume_detect import detect, label_for
 from career_copilot.ports import LLMCallError, LLMClient
 from career_copilot.usecases.apply_preferences import apply_preferences, plan_refilter
 from career_copilot.usecases.extract_preferences import propose_from_notes
+from career_copilot.usecases.markets import enabled_markets
 from career_copilot.usecases.model_settings import in_force
 from career_copilot.usecases.parse_resume import ParsedResume, TextRedactor, analyse_resume
 from career_copilot.usecases.preferences import load_preferences, save_preferences
@@ -557,7 +558,7 @@ async def preview_preferences(body: Annotated[dict[str, Any], Body()]) -> dict[s
             raise HTTPException(422, {"errors": error.errors}) from error
         except (TypeError, ValueError) as error:
             raise HTTPException(422, {"errors": {"form": "Could not read that value."}}) from error
-        plan = plan_refilter(store.all_active_jobs(), draft)
+        plan = plan_refilter(store.all_active_jobs(), draft, enabled_markets(store))
     finally:
         store.close()
     return {

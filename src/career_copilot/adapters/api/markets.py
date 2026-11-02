@@ -15,6 +15,8 @@ from fastapi import APIRouter, Body, HTTPException
 from career_copilot.adapters.store.sqlite_store import SqliteStore
 from career_copilot.config import Config
 from career_copilot.domain.markets import MARKETS, enabled, propose
+from career_copilot.usecases.apply_preferences import apply_preferences
+from career_copilot.usecases.pipeline import current_preferences
 
 
 def router(get_config: Callable[[], Config]) -> APIRouter:
@@ -59,6 +61,14 @@ def router(get_config: Callable[[], Config]) -> APIRouter:
         config = get_config()
         with SqliteStore(config.db_path) as store:
             store.save_market_setting(tuple(dict.fromkeys(codes)), datetime.now(UTC))
+            # Stored jobs carry the outcome computed under the old markets, as with a
+            # preferences save.
+            apply_preferences(
+                store,
+                current_preferences(store, config),
+                model=config.scoring.match_model,
+                rubric_version=config.scoring.rubric_version,
+            )
         return view(config)
 
     return routes

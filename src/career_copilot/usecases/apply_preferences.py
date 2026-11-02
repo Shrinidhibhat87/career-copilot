@@ -11,9 +11,11 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from career_copilot.domain.filters import apply_hard_filters, matching_terms
+from career_copilot.domain.markets import Market
 from career_copilot.domain.models import FilterOutcome, HardFilterResult, StoredJob
 from career_copilot.domain.preferences import Preferences
 from career_copilot.ports import StateStore
+from career_copilot.usecases.markets import enabled_markets
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,12 +66,14 @@ class RefilterPlan:
         return sum(count for key, count in self.transitions.items() if key.endswith(f"→{outcome}"))
 
 
-def plan_refilter(jobs: Sequence[StoredJob], prefs: Preferences) -> RefilterPlan:
+def plan_refilter(
+    jobs: Sequence[StoredJob], prefs: Preferences, markets: tuple[Market, ...] | None = None
+) -> RefilterPlan:
     """Re-run the deterministic filters over `jobs` without touching the store.
 
     Shared by the save and the preview, so what the screen promises is what a save does.
     """
-    config = prefs.to_filter_config()
+    config = prefs.to_filter_config(markets)
     transitions: dict[str, int] = {}
     changes: list[tuple[StoredJob, HardFilterResult]] = []
     for job in jobs:
@@ -113,7 +117,7 @@ def apply_preferences(
     rubric_version: int,
 ) -> RefilterReport:
     """Re-run the deterministic filters over every active stored job."""
-    plan = plan_refilter(store.all_active_jobs(), prefs)
+    plan = plan_refilter(store.all_active_jobs(), prefs, enabled_markets(store))
     for job, verdict in plan.changes:
         store.update_filter_result(job.id, verdict)
     reopened = len(

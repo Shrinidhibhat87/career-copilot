@@ -385,7 +385,10 @@ class SqliteStore:
     # recommendation: whatever the model said, it ranks below `LOCATION_MISMATCH_CAP`, under
     # any threshold the slider allows. The rule's own warning is the marker.
     LOCATION_MISMATCH_CAP = 9
-    _LOCATION_MISMATCH = "j.filter_warnings LIKE '%remote role with non-German location%'"
+    _LOCATION_MISMATCH = (
+        "(j.filter_warnings LIKE '%remote role with non-German location%'"
+        " OR j.filter_warnings LIKE '%remote role with location outside%')"
+    )
     _EFFECTIVE_SCORE = (
         f"CASE WHEN {_LOCATION_MISMATCH} AND COALESCE(m.score, t.score) > {LOCATION_MISMATCH_CAP}"
         f" THEN {LOCATION_MISMATCH_CAP} ELSE COALESCE(m.score, t.score) END"
@@ -566,7 +569,13 @@ class SqliteStore:
             ),
             "belowThreshold": score is not None and score < threshold,
             "locationMismatch": any(
-                reason.startswith(("remote role with non-German location", "location outside"))
+                reason.startswith(
+                    (
+                        "remote role with non-German location",
+                        "remote role with location outside",
+                        "location outside",
+                    )
+                )
                 for reason in (*_split(row["filter_warnings"]), *filter_reasons)
             ),
             # `restored` counts as no decision: the job is back as it was before dismissal.

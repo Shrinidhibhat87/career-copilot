@@ -15,13 +15,13 @@
 | Ready now | `DE` only (national board `jobsuche`). |
 | Coming soon | Other countries are listed and cannot be switched on. No source is named for a country until it is verified (research belongs to the free-sources work). |
 | Default | Never applied silently. `/preferences` shows a proposal and the person confirms. From `allowed_cities` through a small city-to-country table first, from the CV second (a CV shows where someone worked, not where they want to work). Until confirmed, the account behaves as `DE`. |
-| A job's market | The country in the job's own location text. If it is an enabled market, that pack's rules apply. If it is none, the job is filtered out as `location outside your markets`. |
-| No country in the text | The city table decides. A city it does not know keeps the job, as today. |
+| Where a job is | Still decided by the person's allowed cities, as before. The enabled markets decide which country words count as part of a place ("Paris France" is Paris when France is enabled), which language rule runs, and what relocation wording is flagged. A city the person allowed is never dropped for its country. |
+| No country in the text | Nothing changes: the allowed cities decide. |
 | Remote | Fully remote jobs are allowed by default in every market, with no market check. The person switches them off with `allow_remote` on `/preferences`. |
-| Language rule | Patterns are keyed by language. The `DE` pack uses the existing German patterns, moved and unchanged. A pack whose language has no patterns does no language filtering and shows as limited. |
+| Language rule | The German patterns are unchanged and run when any enabled market's language is German. Other languages have no patterns yet, so a pack for them does no language filtering and shows as limited. |
 | Search sources | Which searched sources run comes from the enabled packs. `jobsuche.enabled` in `config.yaml` stays as a global off switch. |
 | Changing markets | Saving re-filters stored jobs, the way saving preferences does. |
-| Reason text | New reason `location outside your markets`. The old `location outside Germany` and `remote role with non-German location` are still read, so no stored row is rewritten. |
+| Reason text | One market: `location outside Germany` (its name), unchanged. Several: `location outside your markets`. The remote warning is now `remote role with location outside …`; the old `non-German` wording is still read, and no stored row is rewritten except by a re-filter. |
 
 ## Shapes
 

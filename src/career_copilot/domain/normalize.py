@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from functools import lru_cache
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from career_copilot.domain.models import JobPosting, RawJob
@@ -51,9 +52,15 @@ _TRACKING_PARAMS = re.compile(
 _PUNCT = re.compile(r"[^\w\s]+", re.UNICODE)
 _WS = re.compile(r"\s+")
 
-_COUNTRY_TAIL = re.compile(
-    r",?\s*(germany|deutschland|de|europe|eu|emea|worldwide|global)\s*$", re.IGNORECASE
-)
+_REGIONS = ("europe", "eu", "emea", "worldwide", "global")
+DEFAULT_COUNTRIES = ("germany", "deutschland", "de")
+
+
+@lru_cache(maxsize=32)
+def _country_tail(countries: tuple[str, ...]) -> re.Pattern[str]:
+    words = "|".join(re.escape(word) for word in (*countries, *_REGIONS))
+    return re.compile(rf",?\s*({words})\s*$", re.IGNORECASE)
+
 
 # A board writes several places into one field, and every board picks its own separator.
 # A spaced hyphen only: "Frankfurt am Main" and "e-commerce" must survive intact.
@@ -101,7 +108,9 @@ def normalize_title(title: str) -> str:
     return _collapse(value)
 
 
-def location_segments(location: str) -> tuple[str, ...]:
+def location_segments(
+    location: str, countries: tuple[str, ...] = DEFAULT_COUNTRIES
+) -> tuple[str, ...]:
     """Every place a posting names, as comparable city tokens.
 
     One posting is often several places — "Berlin, Berlin, Germany" is one city written
@@ -113,14 +122,18 @@ def location_segments(location: str) -> tuple[str, ...]:
     `remote us`, which no allowed-city list contains: a role open only in the US is not
     open in Berlin. "Remote, New York, Canada" has a standalone `remote` among its places,
     so it still qualifies.
+
+    `countries` are the words that name a country the person searches in (a market's own
+    words and code); any other country stays attached, so that place matches no city.
     """
+    tail = _country_tail(countries)
     segments: list[str] = []
     for raw in _SEGMENT_SPLIT.split(location.lower()):
         value = _collapse(_PUNCT.sub(" ", raw))
         # A country or region names no city. Repeated because "berlin germany europe"
         # carries two of them, and one pass would leave the other attached.
         while value:
-            stripped = _collapse(_COUNTRY_TAIL.sub("", value))
+            stripped = _collapse(tail.sub("", value))
             if stripped == value:
                 break
             value = stripped
