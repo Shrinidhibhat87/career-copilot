@@ -674,6 +674,18 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         ALTER TABLE source_runs ADD COLUMN duration_ms INTEGER;
         """,
     ),
+    (
+        34,
+        """
+        -- Which countries this account searches in (spec 018). One row per save, like
+        -- `model_settings`: the newest is in force. No row means the default market.
+        CREATE TABLE market_settings (
+            version      INTEGER PRIMARY KEY AUTOINCREMENT,
+            codes        TEXT NOT NULL,
+            confirmed_at TEXT NOT NULL
+        );
+        """,
+    ),
 )
 
 
