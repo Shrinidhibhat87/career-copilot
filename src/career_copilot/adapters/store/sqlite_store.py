@@ -20,6 +20,7 @@ from career_copilot.domain.cv import SavedCv, StoredCv, cv_sha256
 from career_copilot.domain.feedback import FeedbackEntry
 from career_copilot.domain.intent import IntentEntry, IntentKind
 from career_copilot.domain.lifecycle import LABEL_TO_DECISION, BinItem
+from career_copilot.domain.markets import MarketSetting
 from career_copilot.domain.model_settings import ModelSettings, parse_overrides, parse_preset
 from career_copilot.domain.models import (
     DigestStats,
@@ -1256,6 +1257,31 @@ class SqliteStore:
         if not self._in_transaction:
             self._conn.commit()
         return replace(settings, version=int(cur.lastrowid or 0), saved_at=now)
+
+    # --- markets ----------------------------------------------------------
+
+    def market_setting(self) -> MarketSetting | None:
+        """The newest saved markets, or None when the person never confirmed any."""
+        row = self._conn.execute(
+            "SELECT * FROM market_settings ORDER BY version DESC LIMIT 1"
+        ).fetchone()
+        if row is None:
+            return None
+        return MarketSetting(
+            version=int(row["version"]),
+            codes=tuple(json.loads(row["codes"])),
+            confirmed_at=datetime.fromisoformat(row["confirmed_at"]),
+        )
+
+    def save_market_setting(self, codes: tuple[str, ...], now: datetime) -> MarketSetting:
+        """Append a version; rows are never updated."""
+        cur = self._conn.execute(
+            "INSERT INTO market_settings (codes, confirmed_at) VALUES (?,?)",
+            (json.dumps(codes), now.isoformat()),
+        )
+        if not self._in_transaction:
+            self._conn.commit()
+        return MarketSetting(int(cur.lastrowid or 0), codes, now)
 
     # --- UI flags ---------------------------------------------------------
 
