@@ -2147,3 +2147,11 @@ a.company-name:hover { color: var(--color-brand); text-decoration: underline; }
 .board-table td { border-bottom: 1px solid var(--color-line); padding: 8px 10px; text-align: left; vertical-align: top; }
 .board-table thead th { font-weight: 600; white-space: nowrap; }
 .board-table tbody th { font-weight: 500; }
+
+.market-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.market-chip { align-items: center; border: 1px solid var(--color-line); border-radius: var(--radius-pill); display: inline-flex; gap: 6px; padding: 4px 12px; }
+.market-chip[data-soon="true"] { color: var(--color-muted); }
+.market-note { color: var(--color-muted); margin: 8px 0; }
+.market-actions { align-items: center; display: flex; gap: 12px; }
+.market-actions button { background: transparent; border: 1px solid var(--color-line); border-radius: var(--radius-control); cursor: pointer; padding: 6px 14px; }
+.market-actions button:disabled { cursor: default; opacity: 0.6; }

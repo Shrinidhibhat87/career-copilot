@@ -65,12 +65,18 @@ function saved(overrides: Partial<Preferences> = {}, report = {}) {
   };
 }
 
-// The intent log and sample roles each read their own route on mount, in an order that is
+// The intent log, sample roles and markets each read their own route on mount, in an order that is
 // theirs to choose. They are answered by URL; every other request takes the next queued
 // response, in the order the test listed them.
 const MOUNT_READS: Record<string, unknown> = {
   "/api/intent": { entries: [], activeWords: 0, condenseAt: 1000 },
   "/api/sample-roles": { roles: [] },
+  "/api/markets": {
+    packs: [{ code: "DE", name: "Germany", language: "german", ready: true }],
+    enabled: ["DE"],
+    confirmed: true,
+    proposal: ["DE"],
+  },
 };
 
 function isMountRead(call: unknown[]): boolean {
@@ -92,7 +98,7 @@ function mockFetch(...responses: Partial<Response>[]) {
   return fetchMock;
 }
 
-/** The requests the form itself made, without the intent log's and sample roles' reads. */
+/** The requests the form itself made, without the other sections' reads. */
 function formCalls(fetchMock: ReturnType<typeof mockFetch>): unknown[][] {
   return fetchMock.mock.calls.filter((call) => !isMountRead(call));
 }
@@ -218,9 +224,10 @@ describe("preferences screen", () => {
   });
 
   it("reports an unreachable service instead of an empty form", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("Failed to fetch")));
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
     render(<PreferencesPage />);
-    expect(await screen.findByRole("alert")).toHaveTextContent(PREFERENCES_UNREACHABLE);
+    // The markets section fails the same way and says so too, so pick the form's message.
+    expect(await screen.findByText(PREFERENCES_UNREACHABLE)).toHaveAttribute("role", "alert");
   });
 
   // --- chips --------------------------------------------------------------
