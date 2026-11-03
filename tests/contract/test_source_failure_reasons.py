@@ -99,6 +99,6 @@ def test_the_migration_adds_both_columns_to_an_existing_database(tmp_path: Path)
         if version < 33:
             conn.executescript(sql)
             conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", (version,))
-    assert migrate(conn) == 34
+    assert migrate(conn) == 35
     columns = {row["name"] for row in conn.execute("PRAGMA table_info(source_runs)")}
     assert {"reason", "duration_ms"} <= columns

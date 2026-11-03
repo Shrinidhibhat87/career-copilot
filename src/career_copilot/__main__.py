@@ -334,6 +334,7 @@ def doctor(
     )
     cv_ok = _report_cv(config)
     _report_markets(config)
+    _report_schedule(config)
     _report_sources(config)
     if not (report.ok and cv_ok):
         raise typer.Exit(code=1)
@@ -345,6 +346,14 @@ def _report_markets(config: Config) -> None:
         confirmed = store.market_setting() is not None
         names = ", ".join(m.code for m in enabled_markets(store))
     typer.echo(f"--   markets {names} ({'confirmed' if confirmed else 'default, not confirmed'})")
+
+
+def _report_schedule(config: Config) -> None:
+    """The times a scheduled run starts, if the person set any (spec 019)."""
+    with SqliteStore(config.db_path) as store:
+        saved = store.schedule_setting()
+    state = f"{', '.join(saved.times)} (on)" if saved and saved.enabled else "off"
+    typer.echo(f"--   schedule {state}")
 
 
 def _report_sources(config: Config) -> None:

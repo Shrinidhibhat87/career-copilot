@@ -37,6 +37,7 @@ from career_copilot.domain.preference_note import DecisionSignal
 from career_copilot.domain.preferences import Preferences
 from career_copilot.domain.runs import Progress, RunConfig, RunInProgress, stalled
 from career_copilot.domain.sample_roles import SampleRole
+from career_copilot.domain.schedule import Schedule
 from career_copilot.domain.scoring import Score, ScoredJob, ScoreVerdict
 from career_copilot.domain.search_profile import SearchProfile
 from career_copilot.domain.source_health import FailureReason, SourceHealth, explain
@@ -1292,6 +1293,41 @@ class SqliteStore:
             self._conn.commit()
         return MarketSetting(int(cur.lastrowid or 0), codes, now)
 
+    # --- schedule ---------------------------------------------------------
+
+    def schedule_setting(self) -> Schedule | None:
+        """The newest saved schedule, or None when the person never set one."""
+        row = self._conn.execute(
+            "SELECT * FROM schedule_settings ORDER BY version DESC LIMIT 1"
+        ).fetchone()
+        if row is None:
+            return None
+        return Schedule(
+            version=int(row["version"]),
+            enabled=bool(row["enabled"]),
+            times=tuple(json.loads(row["times"])),
+            saved_at=datetime.fromisoformat(row["saved_at"]),
+        )
+
+    def save_schedule(self, enabled: bool, times: tuple[str, ...], now: datetime) -> Schedule:
+        """Append a version; rows are never updated."""
+        cur = self._conn.execute(
+            "INSERT INTO schedule_settings (enabled, times, saved_at) VALUES (?,?,?)",
+            (int(enabled), json.dumps(times), now.isoformat()),
+        )
+        if not self._in_transaction:
+            self._conn.commit()
+        return Schedule(int(cur.lastrowid or 0), enabled, times, now)
+
+    def last_run_started_at(self, trigger: str | None = None) -> datetime | None:
+        """When the newest full run began, optionally only those a scheduler started."""
+        row = self._conn.execute(
+            "SELECT MAX(started_at) FROM runs WHERE kind = 'full' "
+            'AND (? IS NULL OR "trigger" = ?)',
+            (trigger, trigger),
+        ).fetchone()
+        return _dt(row[0])
+
     # --- UI flags ---------------------------------------------------------
 
     def ui_flag(self, name: str) -> bool | None:
@@ -1476,6 +1512,7 @@ class SqliteStore:
         now: datetime,
         owner_pid: int,
         owner_started_at: str | None,
+        trigger: str = "manual",
     ) -> int:
         """Reclaim and compete for the slot in one database transaction."""
         with nullcontext() if self._in_transaction else self.transaction():
@@ -1485,8 +1522,8 @@ class SqliteStore:
                     """INSERT INTO runs (
                         started_at, kind, state, budget_eur, mode, preferences_version,
                         preferences_hash, triage_model, match_model, rubric_version,
-                        owner_pid, owner_started_at, heartbeat_at, config_json
-                    ) VALUES (?,?,'running',?,?,?,?,?,?,?,?,?,?,?)""",
+                        owner_pid, owner_started_at, heartbeat_at, config_json, "trigger"
+                    ) VALUES (?,?,'running',?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (
                         now.isoformat(),
                         kind,
@@ -1501,6 +1538,7 @@ class SqliteStore:
                         owner_started_at,
                         now.isoformat(),
                         json.dumps(frozen.payload()),
+                        trigger,
                     ),
                 )
             except sqlite3.IntegrityError as exc:

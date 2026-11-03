@@ -24,6 +24,7 @@ from career_copilot.domain.models import (
 from career_copilot.domain.preferences import Preferences
 from career_copilot.domain.runs import Progress
 from career_copilot.domain.sample_roles import SampleRole
+from career_copilot.domain.schedule import Schedule
 from career_copilot.domain.scoring import Score, ScoredJob
 from career_copilot.domain.search_profile import SearchProfile
 from career_copilot.domain.source_health import SourceHealth
@@ -84,6 +85,8 @@ class StateStore(Protocol):
     def last_scraped_by_target(self) -> dict[tuple[str, str], datetime]: ...
 
     def market_setting(self) -> MarketSetting | None: ...
+
+    def schedule_setting(self) -> Schedule | None: ...
 
     def source_health(self, source: str) -> SourceHealth | None: ...
 
