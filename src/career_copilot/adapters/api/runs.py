@@ -84,6 +84,8 @@ def request_refresh(
             "reason": "automatic refresh runs only on local models",
         }
     with SqliteStore(config.db_path) as store:
+        if if_stale and (saved := store.schedule_setting()) and saved.enabled:
+            return {"started": False, "reason": "the schedule decides"}
         if store.current_cv() is None:
             return {"started": False, "reason": "upload a CV first"}
         last = store.last_succeeded_run_at()

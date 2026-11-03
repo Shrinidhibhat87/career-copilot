@@ -11,6 +11,7 @@ import pytest
 from career_copilot.adapters.scheduler import RETRY_AFTER, Scheduler
 from career_copilot.adapters.store.sqlite_store import SqliteStore
 from career_copilot.config import Config
+from career_copilot.domain.schedule import slots_from_times
 
 
 class World:
@@ -37,7 +38,7 @@ class World:
 
     def schedule(self, enabled: bool = True, times: tuple[str, ...] = ("08:00",)) -> None:
         with SqliteStore(self.config.db_path) as store:
-            store.save_schedule(enabled, times, self.clock)
+            store.save_schedule(enabled, slots_from_times(times), self.clock)
 
     def at(self, hour: int, day: int = 10) -> None:
         self.clock = self.clock.replace(day=day, hour=hour, minute=0)
@@ -132,3 +133,16 @@ def test_a_slot_from_before_the_schedule_was_saved_is_not_owed(world: World) -> 
     world.schedule()  # saved at 09:00, after today's 08:00 slot
     world.scheduler.tick()
     assert world.started == []
+
+
+def test_a_slot_due_while_a_run_is_active_starts_once_that_run_ends(world: World) -> None:
+    """Opening at 12:55 with a 13:00 slot: the slot is not lost to the active run."""
+    world.schedule(times=("13:00",))
+    world.at(13)
+    world.busy = True
+    world.scheduler.tick()
+    world.scheduler.tick()
+    assert world.started == []
+    world.busy = False
+    world.scheduler.tick()
+    assert world.started == ["scheduled"]

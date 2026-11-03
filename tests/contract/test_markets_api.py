@@ -68,5 +68,5 @@ def test_migration_adds_the_table_to_an_older_database(tmp_path: Path) -> None:
         if version < 34:
             conn.executescript(sql)
             conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", (version,))
-    assert migrate(conn) == 35
+    assert migrate(conn) == 36
     assert conn.execute("SELECT COUNT(*) FROM market_settings").fetchone()[0] == 0
