@@ -249,6 +249,8 @@ export type PipelineRun = {
   runId: number;
   state: "running" | "syncing" | "succeeded" | "aborted" | "failed";
   kind: string;
+  /** What started the run. Absent on a run object built before the field existed. */
+  trigger?: "manual" | "scheduled";
   stage: string;
   completed: number;
   total: number;
@@ -1163,6 +1165,44 @@ export const saveMarkets = (codes: string[]) =>
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ codes }),
+  });
+
+// --- schedule ----------------------------------------------------------------
+
+/** One of the four daily slots. `time` is "HH:MM" on the hour or half hour; an off slot keeps it. */
+export type ScheduleSlot = { time: string; on: boolean };
+
+export type ScheduleView = {
+  enabled: boolean;
+  times: string[];
+  slots: ScheduleSlot[];
+  next: string | null;
+  lastRunAt: string | null;
+  lastSkip: { reason: string; at: string } | null;
+  canRun: boolean;
+  whyNot: string | null;
+};
+
+async function scheduleRequest(init?: RequestInit): Promise<ScheduleView> {
+  const response = await fetch(`${BASE}/api/schedule`, { cache: "no-store", ...init }).catch(() => {
+    throw new Error("Could not reach the API. Check that it is running.");
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as {
+      detail?: { errors?: { slots?: string; enabled?: string } };
+    } | null;
+    const errors = body?.detail?.errors;
+    throw new Error(errors?.slots ?? errors?.enabled ?? "The request failed. Try again.");
+  }
+  return (await response.json()) as ScheduleView;
+}
+
+export const getSchedule = () => scheduleRequest();
+export const saveSchedule = (enabled: boolean, slots: ScheduleSlot[]) =>
+  scheduleRequest({
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled, slots }),
   });
 
 // --- recycle bin -------------------------------------------------------------

@@ -2,6 +2,7 @@ import { AccountExport } from "@/components/account-export";
 import { AppHeader } from "@/components/app-header";
 import { ModelSettings } from "@/components/model-settings";
 import { RunsScreen } from "@/components/runs-screen";
+import { ScheduleSection } from "@/components/schedule-section";
 import { SourceHealth } from "@/components/source-health";
 
 export default function SettingsPage() {
@@ -11,6 +12,7 @@ export default function SettingsPage() {
       <main className="settings-page">
         <h1>Settings</h1>
         <ModelSettings />
+        <ScheduleSection />
         <RunsScreen />
         <SourceHealth />
         <AccountExport />
