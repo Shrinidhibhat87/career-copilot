@@ -27,7 +27,7 @@ git clone https://github.com/Shrinidhibhat87/career-copilot.git
 cd career-copilot
 
 uv sync
-uv run python -m spacy download en_core_web_lg   # PII redaction model, once per machine
+# also installs the PII redaction model (en_core_web_lg, pinned in pyproject.toml)
 cp .env.example .env                             # optional: OPENROUTER_API_KEY for cloud models
 cd src/frontend && npm install && npm run build && cd ../..   # build the UI, once
 ```

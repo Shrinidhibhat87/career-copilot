@@ -329,7 +329,7 @@ def doctor(
         f"{'ok  ' if pii.usable else 'FAIL'} pii    "
         + ("redaction" if pii.enabled else "redaction disabled")
         + (f" — {pii.detail}" if pii.detail else "")
-        + ("" if pii.usable else " (run: uv run python -m spacy download en_core_web_lg)"),
+        + ("" if pii.usable else " (run: uv sync)"),
         fg=typer.colors.GREEN if pii.usable else typer.colors.RED,
     )
     cv_ok = _report_cv(config)
@@ -442,7 +442,10 @@ def ui(
     if not report.pii.usable:
         # The upload screen's privacy badge is the first thing a new user meets, and a
         # missing spaCy model makes it say only that the file could not be scanned.
-        typer.secho(f"redaction unavailable: {report.pii.detail}", fg=typer.colors.YELLOW)
+        typer.secho(
+            f"redaction unavailable: {report.pii.detail}",
+            fg=typer.colors.YELLOW,
+        )
     if not report.ok:
         # A model backend that is down does not stop the UI: preferences, the review
         # screen and the run history are all readable without one.

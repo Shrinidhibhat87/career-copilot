@@ -80,7 +80,7 @@ pii:                                 # config.py PiiSpec; all values are the def
   identity_path: null                # e.g. profile/identity.yaml
 ```
 
-The spaCy model is not installed by `uv sync`: run `uv run python -m spacy download en_core_web_lg` once per machine.
+The spaCy model is not installed by `uv sync`: it is a pinned dependency in `pyproject.toml`, so `uv sync` installs it.
 
 ## Flow
 
