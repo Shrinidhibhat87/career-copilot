@@ -37,7 +37,7 @@ from career_copilot.domain.preference_note import DecisionSignal
 from career_copilot.domain.preferences import Preferences
 from career_copilot.domain.runs import Progress, RunConfig, RunInProgress, stalled
 from career_copilot.domain.sample_roles import SampleRole
-from career_copilot.domain.schedule import Schedule
+from career_copilot.domain.schedule import Schedule, Slot, slots_from_times
 from career_copilot.domain.scoring import Score, ScoredJob, ScoreVerdict
 from career_copilot.domain.search_profile import SearchProfile
 from career_copilot.domain.source_health import FailureReason, SourceHealth, explain
@@ -1302,22 +1302,33 @@ class SqliteStore:
         ).fetchone()
         if row is None:
             return None
+        slots = (
+            tuple(Slot(s["time"], s["on"]) for s in json.loads(row["slots"]))
+            if row["slots"]
+            else slots_from_times(json.loads(row["times"]))
+        )
         return Schedule(
             version=int(row["version"]),
             enabled=bool(row["enabled"]),
-            times=tuple(json.loads(row["times"])),
+            slots=slots,
             saved_at=datetime.fromisoformat(row["saved_at"]),
         )
 
-    def save_schedule(self, enabled: bool, times: tuple[str, ...], now: datetime) -> Schedule:
+    def save_schedule(self, enabled: bool, slots: tuple[Slot, ...], now: datetime) -> Schedule:
         """Append a version; rows are never updated."""
+        saved = Schedule(0, enabled, slots, now)
         cur = self._conn.execute(
-            "INSERT INTO schedule_settings (enabled, times, saved_at) VALUES (?,?,?)",
-            (int(enabled), json.dumps(times), now.isoformat()),
+            "INSERT INTO schedule_settings (enabled, times, slots, saved_at) VALUES (?,?,?,?)",
+            (
+                int(enabled),
+                json.dumps(saved.times),
+                json.dumps([{"time": s.time, "on": s.on} for s in slots]),
+                now.isoformat(),
+            ),
         )
         if not self._in_transaction:
             self._conn.commit()
-        return Schedule(int(cur.lastrowid or 0), enabled, times, now)
+        return replace(saved, version=int(cur.lastrowid or 0))
 
     def last_run_started_at(self, trigger: str | None = None) -> datetime | None:
         """When the newest full run began, optionally only those a scheduler started."""

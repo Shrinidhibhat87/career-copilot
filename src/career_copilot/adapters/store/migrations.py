@@ -701,6 +701,14 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         ALTER TABLE runs ADD COLUMN "trigger" TEXT NOT NULL DEFAULT 'manual';
         """,
     ),
+    (
+        36,
+        """
+        -- Four named slots, each on or off with its own time. `times` stays as the
+        -- switched-on times; a row saved before this has no slots.
+        ALTER TABLE schedule_settings ADD COLUMN slots TEXT;
+        """,
+    ),
 )
 
 

@@ -12,7 +12,7 @@ from fastapi import APIRouter, Body, HTTPException
 from career_copilot.adapters.api import runs
 from career_copilot.adapters.store.sqlite_store import SqliteStore
 from career_copilot.config import Config
-from career_copilot.domain.schedule import next_slot, validate_times
+from career_copilot.domain.schedule import DEFAULT_SLOTS, next_slot, validate_slots
 from career_copilot.usecases.doctor import diagnose
 from career_copilot.usecases.model_settings import in_force
 
@@ -35,12 +35,14 @@ def router(get_config: Callable[[], Config]) -> APIRouter:
             saved = store.schedule_setting()
             last = store.last_run_started_at("scheduled")
             why = _why_not(in_force(config), store)
+        slots = saved.slots if saved else DEFAULT_SLOTS
         times = saved.times if saved else ()
         upcoming = next_slot(times, datetime.now(UTC).astimezone()) if times else None
         skip = runs.last_skip()
         return {
             "enabled": bool(saved and saved.enabled),
             "times": list(times),
+            "slots": [{"time": s.time, "on": s.on} for s in slots],
             "next": upcoming.isoformat() if saved and saved.enabled and upcoming else None,
             "lastRunAt": last.isoformat() if last else None,
             "lastSkip": {"reason": skip[0], "at": skip[1].isoformat()} if skip else None,
@@ -58,12 +60,14 @@ def router(get_config: Callable[[], Config]) -> APIRouter:
         if not isinstance(enabled, bool):
             raise HTTPException(422, detail={"errors": {"enabled": "expected true or false"}})
         try:
-            times = validate_times(body.get("times"))
+            slots = validate_slots(body.get("slots"))
         except ValueError as error:
-            raise HTTPException(422, detail={"errors": {"times": str(error)}}) from None
+            raise HTTPException(422, detail={"errors": {"slots": str(error)}}) from None
+        if enabled and not any(s.on for s in slots):
+            raise HTTPException(422, detail={"errors": {"slots": "switch on at least one slot"}})
         config = get_config()
         with SqliteStore(config.db_path) as store:
-            store.save_schedule(enabled, times, datetime.now(UTC))
+            store.save_schedule(enabled, slots, datetime.now(UTC))
         return view(config)
 
     return routes

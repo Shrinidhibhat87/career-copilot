@@ -11,13 +11,15 @@
 | The gap | Runs start only from a click, the CLI, or `request_refresh` when the app opens with results older than 20 hours. Nothing runs at a chosen time, and nothing makes up for a closed laptop. |
 | Where it lives | A ticker thread inside the `ui` server, started at sign-in and stopped at sign-out. It checks once a minute. No second process, no OS service. |
 | Whose runs | The signed-in account only. Passcodes are held in memory, so a server nobody has signed in to has nothing to run for. Said on the page. |
-| Per account | `enabled` and a list of local times (`HH:MM`, 1 to 4), kept in the account's `jobs.db`. Off until the person turns it on. Machine local time; no timezone field. |
+| Per account | `enabled` and four slots (Morning, Midday, Evening, Night by position), each on or off with its own time, kept in the account's `jobs.db`. An off slot keeps its time. Off until the person turns it on. Machine local time; no timezone field. |
+| Limits | At most four runs a day. Times are on the hour or half hour only (`HH:00`, `HH:30`), and two slots that are on cannot share a time, so runs are at least 30 minutes apart. Switching the schedule on needs at least one slot on. |
 | Due | The latest slot at or before now, looking back over today and yesterday. It is covered when any run started at or after it, whatever its outcome. A failed run is not retried within the same slot. |
 | Not owed | A slot from before the schedule was last saved is never due, so switching it on or changing a time does not start a run at once. |
 | Catch-up | The same rule at sign-in and on every tick: the latest due slot not yet covered starts one run. Three missed days give one run, not three. |
 | What starts | `request_refresh`, unchanged: an incremental run with no cost preview, only when no role is billed, a CV exists and the model backend is up. A billed role never runs unattended. |
 | Overlap | Skipped when a run is active, in the browser or the terminal. Not queued: the next tick sees it. `request_refresh` gets `queue=False` for this. |
 | Skips | A skip (billed role, no CV, backend down, run active) is remembered in memory with its reason and shown on the page. The same reason is retried after 15 minutes, not every minute. |
+| Open-time refresh | The older refresh on app open (results over 20 hours old) stands down while a schedule is on, so the catch-up rule is the only thing that starts a run at open. With the schedule off it is unchanged. |
 | Stuck runs | Already handled: a dead owner's `running` row is reclaimed at sign-in and by `begin_run`. This spec adds no recovery code. |
 | History | A run records its `trigger`, `manual` or `scheduled`. The run history and `GET /api/runs` show it. |
 | Sleep | The ticker measures wall-clock time, so a machine that wakes after its slot runs it on the first tick. |
@@ -31,7 +33,7 @@
 class Schedule:
     version: int
     enabled: bool
-    times: tuple[str, ...]        # "08:00": local, sorted, unique, at most 4
+    slots: tuple[Slot, ...]       # four: Slot(time="08:00", on=True); times are HH:00 or HH:30
 
 def due_slot(times: Sequence[str], now: datetime) -> datetime | None: ...   # latest slot <= now, today or yesterday
 def next_slot(times: Sequence[str], now: datetime) -> datetime | None: ...
@@ -43,20 +45,21 @@ def is_covered(slot: datetime, last_run_started: datetime | None) -> bool: ...
 CREATE TABLE schedule_settings (
     version INTEGER PRIMARY KEY AUTOINCREMENT,
     enabled INTEGER NOT NULL,
-    times   TEXT NOT NULL,            -- JSON list
+    times   TEXT NOT NULL,            -- JSON list of the switched-on times
     saved_at TEXT NOT NULL
 );
+-- Migration 36: ALTER TABLE schedule_settings ADD COLUMN slots TEXT;  -- JSON, four {time, on}
 ALTER TABLE runs ADD COLUMN trigger TEXT NOT NULL DEFAULT 'manual';
 ```
 
 ```
-GET /api/schedule → {enabled, times, next, lastRunAt, lastSkip: {reason, at} | null, canRun: bool, whyNot: str | null}
-PUT /api/schedule {enabled, times} → same shape; 422 on a bad time, none, or more than 4
+GET /api/schedule → {enabled, times, slots: [{time, on}], next, lastRunAt, lastSkip: {reason, at} | null, canRun: bool, whyNot: str | null}
+PUT /api/schedule {enabled, slots: [{time, on}]} → same shape; 422 on a bad time, a duplicate, not four slots, or none on while enabled
 ```
 
 ## Flow
 
-1. `/settings` has a Schedule section: a switch, up to four times, the next run, the last skip, and a note that the app must be open and signed in.
+1. `/settings` has a Schedule section: a switch, four slot cards each with a switch and a wheel time picker, the next run, the last skip, and a note that the app must be open and signed in.
 2. The ticker wakes each minute and reads the schedule. Off or no slot due: nothing.
 3. A due slot that is not covered, with no run active, calls `request_refresh(config, trigger="scheduled", queue=False)`.
 4. A skip is stored in memory with its reason. Sign-out stops the ticker, and the next sign-in runs the same check once at start, which is the catch-up.
