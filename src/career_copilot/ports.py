@@ -188,6 +188,7 @@ class FailureCategory(StrEnum):
     PROVIDER = "provider"
     SCHEMA = "schema"
     EVIDENCE = "evidence"
+    REDACTION = "redaction"
 
 
 FAILURE_MESSAGES = {
@@ -199,6 +200,10 @@ FAILURE_MESSAGES = {
     ),
     FailureCategory.SCHEMA: "The model returned invalid output. Try another model.",
     FailureCategory.EVIDENCE: "The model made an unsupported claim. Review the source evidence.",
+    FailureCategory.REDACTION: (
+        "Redaction could not run, so nothing was sent to the provider. "
+        "Run `career-copilot doctor` to see why."
+    ),
 }
 
 
@@ -271,6 +276,9 @@ class PiiDetector(Protocol):
 
 class PiiRedactionError(LLMCallError):
     """Redaction could not be completed. The provider was never called."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, category=FailureCategory.REDACTION)
 
 
 class PiiModelMissingError(PiiRedactionError):
