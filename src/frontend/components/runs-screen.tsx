@@ -186,7 +186,7 @@ export function RunsScreen() {
           : !history.length ? <p className="settings-note">No runs yet.</p> : <ul className="run-history">
             {history.map((item) => <li key={item.runId} data-state={item.state}>
               <button type="button" disabled={activeId !== null && activeId !== item.runId} onClick={() => setRun(item)}>
-                Run {item.runId} · {kindOf(item)} · {item.state}
+                Run {item.runId} · {kindOf(item)} · {item.state}{item.trigger === "scheduled" ? " · scheduled" : ""}
               </button><time dateTime={item.startedAt}>{new Date(item.startedAt).toLocaleString()}</time>
             </li>)}
           </ul>}

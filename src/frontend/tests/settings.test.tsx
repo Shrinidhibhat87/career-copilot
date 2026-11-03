@@ -8,6 +8,9 @@ import { needsApproval, type ModelRole, type PipelineRun } from "@/lib/api";
 // The models panel has its own tests and endpoints; here it only holds its place.
 vi.mock("@/components/model-settings", () => ({ ModelSettings: () => null }));
 
+// The schedule panel has its own tests and endpoints; here it only holds its place.
+vi.mock("@/components/schedule-section", () => ({ ScheduleSection: () => null }));
+
 // The observability panel has its own tests and endpoints; here it only holds its place.
 vi.mock("@/components/observability-section", () => ({
   ObservabilitySection: () => (
