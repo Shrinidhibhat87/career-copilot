@@ -8,7 +8,7 @@ import os
 from collections.abc import AsyncIterator, Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import asynccontextmanager
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Event
 from typing import Annotated, Any
@@ -16,11 +16,13 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Body, FastAPI, HTTPException, Query
 
 from career_copilot.adapters.observability_session import AppSession
+from career_copilot.adapters.scheduler import Scheduler
 from career_copilot.adapters.store.observability_store import ObservabilityStore
 from career_copilot.adapters.store.sqlite_store import SqliteStore, process_started_at
 from career_copilot.config import Config
 from career_copilot.domain.runs import RunInProgress, stalled
 from career_copilot.usecases.doctor import diagnose
+from career_copilot.usecases.model_settings import in_force
 from career_copilot.usecases.pipeline import (
     PipelineRun,
     current_preferences,
@@ -65,7 +67,9 @@ def worker(config: Config, run_id: int, cancel_event: Event) -> None:
             request_refresh(config)
 
 
-def request_refresh(config: Config, *, if_stale: bool = False) -> dict[str, object]:
+def request_refresh(
+    config: Config, *, if_stale: bool = False, trigger: str = "manual", queue: bool = True
+) -> dict[str, object]:
     """Start an incremental run with no cost preview, if it is free and useful.
 
     Called after the user saves an intent entry or a sample role, and by the app on open
@@ -92,9 +96,11 @@ def request_refresh(config: Config, *, if_stale: bool = False) -> dict[str, obje
             with store.transaction():
                 frozen = freeze_config(config, store, current_preferences(store, config))
                 run_id = store.begin_run(
-                    "full", frozen, now(), os.getpid(), process_started_at(os.getpid())
+                    "full", frozen, now(), os.getpid(), process_started_at(os.getpid()), trigger
                 )
         except RunInProgress:
+            if not queue:
+                return {"started": False, "reason": "a run is already active"}
             refresh_pending.set()
             return {"started": False, "reason": "queued after the active run"}
         try:
@@ -106,6 +112,11 @@ def request_refresh(config: Config, *, if_stale: bool = False) -> dict[str, obje
 
 
 _app_session: AppSession | None = None
+_scheduler: Scheduler | None = None
+
+
+def last_skip() -> tuple[str, datetime] | None:
+    return _scheduler.last_skip if _scheduler else None
 
 
 def run_active() -> bool:
@@ -125,10 +136,16 @@ def start_session(config: Config) -> None:
         profile=config.profile.name,
     )
     _app_session.start()
+    global _scheduler
+    _scheduler = Scheduler(in_force(config), request_refresh, run_active, now)
+    _scheduler.begin()
 
 
 def end_session() -> None:
-    global _app_session
+    global _app_session, _scheduler
+    if _scheduler is not None:
+        _scheduler.end()
+        _scheduler = None
     if _app_session is not None:
         _app_session.end()
         _app_session = None
@@ -177,6 +194,7 @@ def run_payload(row: dict[str, Any]) -> dict[str, object]:
         "runId": row["id"],
         "state": row["state"],
         "kind": row["kind"],
+        "trigger": row["trigger"],
         "stage": row["stage"],
         "completed": row["completed"],
         "total": row["total"],

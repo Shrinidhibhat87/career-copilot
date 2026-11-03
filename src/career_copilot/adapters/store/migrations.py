@@ -686,6 +686,21 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         );
         """,
     ),
+    (
+        35,
+        """
+        -- When this account wants a run each day (spec 019). One row per save, like
+        -- `market_settings`: the newest is in force. No row means no schedule.
+        CREATE TABLE schedule_settings (
+            version  INTEGER PRIMARY KEY AUTOINCREMENT,
+            enabled  INTEGER NOT NULL,
+            times    TEXT NOT NULL,
+            saved_at TEXT NOT NULL
+        );
+        -- 'manual' or 'scheduled': what started the run.
+        ALTER TABLE runs ADD COLUMN "trigger" TEXT NOT NULL DEFAULT 'manual';
+        """,
+    ),
 )
 
 

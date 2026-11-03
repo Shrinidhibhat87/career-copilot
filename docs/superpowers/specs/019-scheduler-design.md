@@ -13,6 +13,7 @@
 | Whose runs | The signed-in account only. Passcodes are held in memory, so a server nobody has signed in to has nothing to run for. Said on the page. |
 | Per account | `enabled` and a list of local times (`HH:MM`, 1 to 4), kept in the account's `jobs.db`. Off until the person turns it on. Machine local time; no timezone field. |
 | Due | The latest slot at or before now, looking back over today and yesterday. It is covered when any run started at or after it, whatever its outcome. A failed run is not retried within the same slot. |
+| Not owed | A slot from before the schedule was last saved is never due, so switching it on or changing a time does not start a run at once. |
 | Catch-up | The same rule at sign-in and on every tick: the latest due slot not yet covered starts one run. Three missed days give one run, not three. |
 | What starts | `request_refresh`, unchanged: an incremental run with no cost preview, only when no role is billed, a CV exists and the model backend is up. A billed role never runs unattended. |
 | Overlap | Skipped when a run is active, in the browser or the terminal. Not queued: the next tick sees it. `request_refresh` gets `queue=False` for this. |
@@ -65,6 +66,7 @@ PUT /api/schedule {enabled, times} → same shape; 422 on a bad time, none, or m
 
 - Pure: `due_slot` across midnight, before the first slot of the day, an empty list; `next_slot`; `is_covered` at the boundary; times validated and sorted.
 - Store: migration 35 on an existing database, versions round-trip, newest wins; `trigger` defaults to `manual`.
+- A slot before the save time is not due.
 - Ticker, with a fake clock and a fake `request_refresh`: starts once per slot, not again after a failed run, catches up once after three missed days, skips while a run is active without queueing, retries a skip after 15 minutes only.
 - Billed role: no run starts, and the page says why.
 - API contract: shape, validation errors, `PUT` takes effect on the next tick.

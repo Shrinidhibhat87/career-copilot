@@ -38,6 +38,7 @@ from career_copilot.adapters.api import (
     review,
     runs,
     sample_roles,
+    schedule,
     source_health,
     source_lookup,
 )
@@ -136,6 +137,7 @@ app.include_router(runs.router(_in_force))
 app.include_router(health.router(_in_force))
 app.include_router(source_health.router(lambda: _user_config()))
 app.include_router(markets.router(lambda: _user_config()))
+app.include_router(schedule.router(lambda: _user_config()))
 app.include_router(model_settings.router(lambda: _user_config()))
 app.include_router(observability.router(lambda: _user_config()))
 app.include_router(review.router(lambda: _user_config()))
