@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum
-from typing import Protocol, runtime_checkable
+from typing import ClassVar, Protocol, runtime_checkable
 
 from career_copilot.domain.cv import SavedCv, StoredCv
 from career_copilot.domain.intent import IntentEntry, IntentKind
@@ -21,6 +21,7 @@ from career_copilot.domain.models import (
     StoredJob,
     UpsertOutcome,
 )
+from career_copilot.domain.notifications import Notifications, Reply
 from career_copilot.domain.preferences import Preferences
 from career_copilot.domain.runs import Progress
 from career_copilot.domain.sample_roles import SampleRole
@@ -87,6 +88,8 @@ class StateStore(Protocol):
     def market_setting(self) -> MarketSetting | None: ...
 
     def schedule_setting(self) -> Schedule | None: ...
+
+    def notification_setting(self) -> Notifications | None: ...
 
     def source_health(self, source: str) -> SourceHealth | None: ...
 
@@ -554,6 +557,28 @@ class Notifier(Protocol):
     """Delivers a rendered digest."""
 
     def deliver(self, title: str, body: str) -> None: ...
+
+
+class NotificationError(RuntimeError):
+    """A push or a reply poll failed. The message is fixed text: it never carries a token,
+    an address or a URL, because it is stored and shown on Settings."""
+
+    MESSAGES: ClassVar[dict[str, str]] = {
+        "unreachable": "Telegram could not be reached.",
+        "rejected": "Telegram refused the request. Check the bot token.",
+    }
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(self.MESSAGES[reason])
+        self.reason = reason
+
+
+class ReplyReceiver(Protocol):
+    """Button presses from a messaging channel (spec 020)."""
+
+    def poll(self, offset: int) -> tuple[list[Reply], int]: ...  # replies, next offset
+
+    def acknowledge(self, reply: Reply, shown: str | None) -> None: ...
 
 
 class SecretStoreUnavailable(RuntimeError):

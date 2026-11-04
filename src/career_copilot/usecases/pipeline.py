@@ -49,6 +49,7 @@ from career_copilot.usecases.digest import DigestRun
 from career_copilot.usecases.discover import DiscoverRun
 from career_copilot.usecases.funnel import build_funnel
 from career_copilot.usecases.markets import enabled_markets
+from career_copilot.usecases.notify import notify_after_run
 from career_copilot.usecases.preferences import load_preferences
 from career_copilot.usecases.repost_guard import hide_reposts
 from career_copilot.usecases.score import (
@@ -486,6 +487,7 @@ class PipelineRun:
                 f"matched={scored.matched} above={scored.above_threshold}/{scored.target} "
                 f"capped={scored.capped}",
             )
+            self._push(frozen)
         except BaseException as exc:
             finalize_error(self.store, self.run_id, exc)
             # A terminal row is not a reason to swallow the interpreter's own exits: the
@@ -495,6 +497,14 @@ class PipelineRun:
         finally:
             # Conditional transition: does nothing after any successful finalization.
             self.store.fail_run(self.run_id, now(), "internal", "The run stopped unexpectedly.")
+
+    def _push(self, frozen: RunConfig) -> None:
+        """Telegram, if the person switched it on (spec 020). The run is already finished,
+        so nothing here can change its outcome."""
+        try:
+            notify_after_run(self.config, self.store, frozen, now)
+        except Exception as error:
+            log.warning("run %d notification error: %s", self.run_id, type(error).__name__)
 
     @contextmanager
     def _stage(self, name: str) -> Iterator[None]:

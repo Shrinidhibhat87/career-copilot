@@ -709,6 +709,37 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         ALTER TABLE schedule_settings ADD COLUMN slots TEXT;
         """,
     ),
+    (
+        37,
+        """
+        -- Which channels this account switched on (spec 020). Versioned like
+        -- `schedule_settings`; no row means nothing is on. No token, address or chat id is
+        -- ever stored here: those live in the OS keychain.
+        CREATE TABLE notification_settings (
+            version  INTEGER PRIMARY KEY AUTOINCREMENT,
+            enabled  INTEGER NOT NULL,
+            telegram INTEGER NOT NULL,
+            email    INTEGER NOT NULL,
+            saved_at TEXT NOT NULL
+        );
+        CREATE TABLE notified_jobs (
+            job_id  INTEGER NOT NULL,
+            channel TEXT NOT NULL,
+            sent_at TEXT NOT NULL,
+            PRIMARY KEY (job_id, channel)
+        );
+        CREATE TABLE telegram_state (
+            id     INTEGER PRIMARY KEY CHECK (id = 1),
+            "offset" INTEGER NOT NULL
+        );
+        -- The last failed push per channel: fixed text, cleared by the next success.
+        CREATE TABLE notification_failures (
+            channel   TEXT PRIMARY KEY,
+            message   TEXT NOT NULL,
+            failed_at TEXT NOT NULL
+        );
+        """,
+    ),
 )
 
 
