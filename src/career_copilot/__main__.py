@@ -15,13 +15,14 @@ from dotenv import load_dotenv
 from career_copilot.adapters import cli_user
 from career_copilot.adapters.cli_models import app as models_app
 from career_copilot.adapters.cli_sources import app as sources_app
+from career_copilot.adapters.notify.email import EmailSettings, email_name
 from career_copilot.adapters.notify.telegram import chat_name
 from career_copilot.adapters.secrets import default_secrets
 from career_copilot.adapters.sources.jobsuche import SEARCH_SOURCES
 from career_copilot.adapters.store.sqlite_store import SqliteStore, process_started_at
 from career_copilot.config import Config, resolve_models
 from career_copilot.domain.models import FilterOutcome
-from career_copilot.domain.notifications import mask_chat
+from career_copilot.domain.notifications import mask_chat, mask_email
 from career_copilot.domain.runs import RunInProgress
 from career_copilot.usecases.compare_backends import compare as compare_exports
 from career_copilot.usecases.compare_backends import export_top
@@ -370,6 +371,9 @@ def _report_notifications(config: Config) -> None:
     on = bool(saved and saved.enabled and saved.telegram and chat)
     state = f"paired ({mask_chat(chat)}, on)" if on and chat else "off"
     typer.echo(f"--   telegram {state}")
+    mail = EmailSettings.load(default_secrets().get(email_name(account_of(config))))
+    mail_on = bool(saved and saved.enabled and saved.email and mail)
+    typer.echo(f"--   email {f'on ({mask_email(mail.to)})' if mail_on and mail else 'off'}")
 
 
 def _report_sources(config: Config) -> None:

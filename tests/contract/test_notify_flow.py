@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import smtplib
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
+from career_copilot.adapters.notify.email import EmailSettings, email_name
 from career_copilot.adapters.notify.telegram import TelegramBot, chat_name, token_name
 from career_copilot.adapters.secrets import ChainedSecretStore, EnvSecretStore, MemorySecretStore
 from career_copilot.adapters.store.sqlite_store import SqliteStore
@@ -18,6 +20,7 @@ from career_copilot.domain.scoring import RUBRIC_VERSION
 from career_copilot.usecases.notify import account_of, apply_replies, notify_after_run
 from career_copilot.usecases.pipeline import PipelineRun
 from tests.contract.test_review_api import score, seed
+from tests.smtp_fake import PASSWORD, FakeSmtp
 from tests.telegram_fake import CHAT, TOKEN, FakeTelegram
 
 NOW = datetime(2026, 11, 4, 9, tzinfo=UTC)
@@ -244,3 +247,82 @@ def test_a_crash_while_pushing_never_changes_the_run(
     monkeypatch.setattr("career_copilot.usecases.pipeline.notify_after_run", boom)
     with SqliteStore(config.db_path) as store:
         PipelineRun(store, config, 1)._push(frozen())  # must not raise
+
+
+# --- email ---------------------------------------------------------------------------------
+
+
+def mail_keys(config: Config) -> ChainedSecretStore:
+    memory = MemorySecretStore()
+    settings = EmailSettings("smtp.example.com", 587, "me@example.com", PASSWORD, "to@example.com")
+    memory.set(email_name(account_of(config)), settings.dump())
+    return ChainedSecretStore(EnvSecretStore({}), MemorySecretStore(), memory)
+
+
+@pytest.fixture
+def smtp(monkeypatch: pytest.MonkeyPatch) -> FakeSmtp:
+    fake = FakeSmtp()
+    monkeypatch.setattr("smtplib.SMTP", fake.factory())
+    return fake
+
+
+def switch_mail(config: Config, *, email: bool = True) -> None:
+    with SqliteStore(config.db_path) as store:
+        store.save_notification_setting(True, False, email, NOW)
+
+
+def test_email_sends_one_digest_per_run_with_the_cap(
+    world: tuple[Config, FakeTelegram], smtp: FakeSmtp
+) -> None:
+    config, fake = world
+    jobs(config, 7)
+    switch_mail(config)
+    push(config, mail_keys(config))
+    assert len(smtp.sent) == 1 and fake.calls == []
+    body = smtp.sent[0].get_content()
+    assert body.count("https://x.test") == 5 and "+2 more in the app" in body
+
+
+def test_email_does_not_resend_and_sends_nothing_when_nothing_is_new(
+    world: tuple[Config, FakeTelegram], smtp: FakeSmtp
+) -> None:
+    config, _ = world
+    jobs(config, 2)
+    switch_mail(config)
+    push(config, mail_keys(config))
+    push(config, mail_keys(config))
+    assert len(smtp.sent) == 1
+
+
+def test_email_is_silent_when_off_or_not_set_up(
+    world: tuple[Config, FakeTelegram], smtp: FakeSmtp
+) -> None:
+    config, _ = world
+    jobs(config, 2)
+    switch_mail(config, email=False)
+    push(config, mail_keys(config))
+    switch_mail(config)
+    push(config, keys(config, paired=False))
+    assert smtp.sent == [] and smtp.opened == []
+
+
+def test_a_failed_email_is_recorded_and_retried_and_telegram_still_goes(
+    world: tuple[Config, FakeTelegram], smtp: FakeSmtp
+) -> None:
+    config, _ = world
+    jobs(config, 2)
+    with SqliteStore(config.db_path) as store:
+        store.save_notification_setting(True, True, True, NOW)
+    both = mail_keys(config)
+    both.set(token_name(account_of(config)), TOKEN)
+    both.set(chat_name(account_of(config)), CHAT)
+    smtp.fail = smtplib.SMTPAuthenticationError(535, PASSWORD.encode())
+    push(config, both)
+    with SqliteStore(config.db_path) as store:
+        failure = store.notify_failure("email")
+        assert failure is not None and PASSWORD not in failure[0]
+        assert store.notified_job_ids("email") == set()
+        assert len(store.notified_job_ids("telegram")) == 2
+    smtp.fail = None
+    push(config, both)
+    assert len(smtp.sent) == 1
