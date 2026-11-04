@@ -15,6 +15,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, FastAPI, HTTPException, Query
 
+from career_copilot.adapters.notify.poller import ReplyPoller
 from career_copilot.adapters.observability_session import AppSession
 from career_copilot.adapters.scheduler import Scheduler
 from career_copilot.adapters.store.observability_store import ObservabilityStore
@@ -115,6 +116,7 @@ def request_refresh(
 
 _app_session: AppSession | None = None
 _scheduler: Scheduler | None = None
+_poller: ReplyPoller | None = None
 
 
 def last_skip() -> tuple[str, datetime] | None:
@@ -141,10 +143,16 @@ def start_session(config: Config) -> None:
     global _scheduler
     _scheduler = Scheduler(in_force(config), request_refresh, run_active, now)
     _scheduler.begin()
+    global _poller
+    _poller = ReplyPoller(config, now)
+    _poller.begin()
 
 
 def end_session() -> None:
-    global _app_session, _scheduler
+    global _app_session, _scheduler, _poller
+    if _poller is not None:
+        _poller.end()
+        _poller = None
     if _scheduler is not None:
         _scheduler.end()
         _scheduler = None

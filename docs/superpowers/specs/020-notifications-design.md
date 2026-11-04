@@ -17,7 +17,7 @@
 | When | After any run that finishes, scheduled or manual, when the master switch and a channel are on. A manual run notifies too, which is also how a person tests the setup. With nothing on, neither sends. |
 | Cap | At most 5 jobs per run, best first, then one line `+N more in the app`. |
 | Telegram | One message per job with two buttons, 👍 Interested and 👎 Not interested. 👍 saves the job (✓), 👎 dismisses it (✕, recoverable from the recycle bin). The message is edited to show the choice and keeps its buttons. |
-| Replies | Long-polling `getUpdates` while the account is signed in, started with the scheduler's session. No webhook, no open port, no public URL. Updates from any chat other than the paired one are ignored. The update offset is stored so a reply applies once. Replies are idempotent, because decisions are an append-only log where the latest wins: pressing the button for the choice already in force appends nothing; pressing the other button replaces it; pressing the chosen button again takes it back, which appends `restored` (no decision), the same as a job returning from the recycle bin, and the message goes back to its two plain buttons. A reply sent while the app was closed is applied at the next sign-in (Telegram keeps it about 24 hours). |
+| Replies | Long-polling `getUpdates` while the account is signed in, started with the scheduler's session. No webhook, no open port, no public URL. Updates from any chat other than the paired one are ignored. The update offset is stored so a reply applies once. Replies are idempotent, because decisions are an append-only log where the latest wins: pressing the other button replaces the choice; pressing the chosen button again takes it back, which appends `restored` (no decision), the same as a job returning from the recycle bin, and the message goes back to its two plain buttons. A reply sent while the app was closed is applied at the next sign-in (Telegram keeps it about 24 hours). |
 | Pairing | The person creates a bot with BotFather and pastes its token. The app shows a one-time code to send to the bot, then stores the chat ID itself. The person never types a chat ID. |
 | Email | The person's own SMTP: host, port, user, app password, recipient. One digest email per run, same cap, each job with score, reasons and link. No reply handling. |
 | Failures | A failed send never fails the run. It is recorded as a category and a message with no secret in it, shown in Settings, and retried at the next scheduled run. Each channel has a Test button that sends a harmless test message. |
@@ -37,7 +37,8 @@ def email_body(matches: Sequence[Match], more: int) -> str: ...
 ```python
 # ports.py: Notifier stays; one new port for replies.
 class ReplyReceiver(Protocol):
-    def poll(self) -> list[Reply]: ...        # Reply(job_id, choice: "interested" | "not_interested")
+    def poll(self, offset: int) -> tuple[list[Reply], int]: ...   # replies and the next offset
+    def acknowledge(self, reply: Reply, shown: str | None) -> None: ...
 ```
 
 ```sql
@@ -58,6 +59,9 @@ CREATE TABLE notified_jobs (
 CREATE TABLE telegram_state (
     id     INTEGER PRIMARY KEY CHECK (id = 1),
     offset INTEGER NOT NULL
+);
+CREATE TABLE notification_failures (   -- last failed push per channel: fixed text, cleared on success
+    channel TEXT PRIMARY KEY, message TEXT NOT NULL, failed_at TEXT NOT NULL
 );
 ```
 
@@ -85,7 +89,7 @@ POST /api/notifications/{channel}/test         → {ok, error: category | null}
 - Pure: `pick` for the cap, the `+N more` count and jobs already sent; masks for short and odd values; message text carries score, reasons and the posting link and no CV text beyond the stored reasons.
 - Store: migration 37 on an existing database; versions round-trip, newest wins; `notified_jobs` is unique per job and channel; the offset round-trips.
 - Default state: a fresh account shows "Not set up" and sends nothing; a set-up channel that is off sends nothing; with nothing on, no network call is made.
-- Telegram, against a fake Bot API: one message per job, buttons present, 👍 saves, 👎 dismisses, the message is edited, an update from another chat is ignored, the offset keeps a reply from applying twice, a repeated 👍 appends nothing, 👎 after 👍 replaces it, tapping the chosen button again takes it back to no decision and restores the plain buttons, pairing stores the chat ID.
+- Telegram, against a fake Bot API: one message per job, buttons present, 👍 saves, 👎 dismisses, the message is edited, an update from another chat is ignored, the offset keeps a reply from applying twice, the same update never applies twice, 👎 after 👍 replaces it, tapping the chosen button again takes it back to no decision and restores the plain buttons, pairing stores the chat ID.
 - Email, against a fake SMTP server: one message per run with the cap line, a wrong password and an unreachable host give a failure category and no secret in the text.
 - Leaks: no secret or masked source value in `jobs.db`, account exports, API responses, log output or error text.
 - Wiring: a scheduled run sends, a manual run sends too when a channel is on, and neither sends with nothing on, a failed send leaves the run `done`, a second run does not resend.

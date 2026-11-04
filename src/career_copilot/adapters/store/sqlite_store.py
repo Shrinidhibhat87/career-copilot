@@ -33,6 +33,7 @@ from career_copilot.domain.models import (
     StoredJob,
     UpsertOutcome,
 )
+from career_copilot.domain.notifications import Notifications
 from career_copilot.domain.preference_note import DecisionSignal
 from career_copilot.domain.preferences import Preferences
 from career_copilot.domain.runs import Progress, RunConfig, RunInProgress, stalled
@@ -1338,6 +1339,84 @@ class SqliteStore:
             (trigger, trigger),
         ).fetchone()
         return _dt(row[0])
+
+    # --- notifications (spec 020) -----------------------------------------
+
+    def notification_setting(self) -> Notifications | None:
+        """The newest saved switches, or None when the person never set any."""
+        row = self._conn.execute(
+            "SELECT * FROM notification_settings ORDER BY version DESC LIMIT 1"
+        ).fetchone()
+        if row is None:
+            return None
+        return Notifications(
+            version=int(row["version"]),
+            enabled=bool(row["enabled"]),
+            telegram=bool(row["telegram"]),
+            email=bool(row["email"]),
+            saved_at=datetime.fromisoformat(row["saved_at"]),
+        )
+
+    def save_notification_setting(
+        self, enabled: bool, telegram: bool, email: bool, now: datetime
+    ) -> Notifications:
+        """Append a version; rows are never updated."""
+        cur = self._conn.execute(
+            "INSERT INTO notification_settings (enabled, telegram, email, saved_at)"
+            " VALUES (?,?,?,?)",
+            (int(enabled), int(telegram), int(email), now.isoformat()),
+        )
+        self._conn.commit()
+        return Notifications(int(cur.lastrowid or 0), enabled, telegram, email, now)
+
+    def notified_job_ids(self, channel: str) -> set[int]:
+        rows = self._conn.execute("SELECT job_id FROM notified_jobs WHERE channel = ?", (channel,))
+        return {int(r[0]) for r in rows}
+
+    def mark_notified(self, job_id: int, channel: str, now: datetime) -> None:
+        self._conn.execute(
+            "INSERT OR IGNORE INTO notified_jobs (job_id, channel, sent_at) VALUES (?,?,?)",
+            (job_id, channel, now.isoformat()),
+        )
+        self._conn.commit()
+
+    def telegram_offset(self) -> int:
+        row = self._conn.execute('SELECT "offset" FROM telegram_state WHERE id = 1').fetchone()
+        return int(row[0]) if row else 0
+
+    def set_telegram_offset(self, offset: int) -> None:
+        self._conn.execute(
+            'INSERT INTO telegram_state (id, "offset") VALUES (1, ?)'
+            ' ON CONFLICT(id) DO UPDATE SET "offset" = excluded."offset"',
+            (offset,),
+        )
+        self._conn.commit()
+
+    def record_notify_failure(self, channel: str, message: str, now: datetime) -> None:
+        self._conn.execute(
+            "INSERT OR REPLACE INTO notification_failures (channel, message, failed_at)"
+            " VALUES (?,?,?)",
+            (channel, message, now.isoformat()),
+        )
+        self._conn.commit()
+
+    def clear_notify_failure(self, channel: str) -> None:
+        self._conn.execute("DELETE FROM notification_failures WHERE channel = ?", (channel,))
+        self._conn.commit()
+
+    def notify_failure(self, channel: str) -> tuple[str, datetime] | None:
+        row = self._conn.execute(
+            "SELECT message, failed_at FROM notification_failures WHERE channel = ?", (channel,)
+        ).fetchone()
+        return (row["message"], datetime.fromisoformat(row["failed_at"])) if row else None
+
+    def current_decision(self, job_id: int) -> str | None:
+        """The newest decision about a job; `restored` counts as none."""
+        row = self._conn.execute(
+            "SELECT decision FROM job_decisions WHERE job_id = ? ORDER BY id DESC LIMIT 1",
+            (job_id,),
+        ).fetchone()
+        return None if row is None or row[0] == "restored" else str(row[0])
 
     # --- UI flags ---------------------------------------------------------
 

@@ -15,16 +15,20 @@ from dotenv import load_dotenv
 from career_copilot.adapters import cli_user
 from career_copilot.adapters.cli_models import app as models_app
 from career_copilot.adapters.cli_sources import app as sources_app
+from career_copilot.adapters.notify.telegram import chat_name
+from career_copilot.adapters.secrets import default_secrets
 from career_copilot.adapters.sources.jobsuche import SEARCH_SOURCES
 from career_copilot.adapters.store.sqlite_store import SqliteStore, process_started_at
 from career_copilot.config import Config, resolve_models
 from career_copilot.domain.models import FilterOutcome
+from career_copilot.domain.notifications import mask_chat
 from career_copilot.domain.runs import RunInProgress
 from career_copilot.usecases.compare_backends import compare as compare_exports
 from career_copilot.usecases.compare_backends import export_top
 from career_copilot.usecases.doctor import diagnose, profile_line, start_hint
 from career_copilot.usecases.markets import enabled_markets
 from career_copilot.usecases.model_settings import in_force
+from career_copilot.usecases.notify import account_of
 from career_copilot.usecases.pipeline import (
     PipelineRun,
     build_digest_run,
@@ -335,6 +339,7 @@ def doctor(
     cv_ok = _report_cv(config)
     _report_markets(config)
     _report_schedule(config)
+    _report_notifications(config)
     _report_sources(config)
     if not (report.ok and cv_ok):
         raise typer.Exit(code=1)
@@ -354,6 +359,17 @@ def _report_schedule(config: Config) -> None:
         saved = store.schedule_setting()
     state = f"{', '.join(saved.times)} (on)" if saved and saved.enabled else "off"
     typer.echo(f"--   schedule {state}")
+
+
+def _report_notifications(config: Config) -> None:
+    """Whether pushes are on (spec 020). Not set up is `off`, never a failure; no value is
+    shown beyond the last four digits of the chat."""
+    with SqliteStore(config.db_path) as store:
+        saved = store.notification_setting()
+    chat = default_secrets().get(chat_name(account_of(config)))
+    on = bool(saved and saved.enabled and saved.telegram and chat)
+    state = f"paired ({mask_chat(chat)}, on)" if on and chat else "off"
+    typer.echo(f"--   telegram {state}")
 
 
 def _report_sources(config: Config) -> None:
