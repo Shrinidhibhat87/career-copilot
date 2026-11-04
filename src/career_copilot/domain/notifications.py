@@ -79,3 +79,17 @@ def decision_for(current: str | None, choice: str) -> str | None:
 def shown_choice(decision: str | None, choice: str) -> str | None:
     """The choice the message should show after the press, or none once it is taken back."""
     return choice if decision == CHOICES[choice] else None
+
+
+def mask_email(address: str) -> str:
+    """`jane@gmail.com` -> `j***@gmail.com`."""
+    name, _, domain = address.partition("@")
+    return f"{name[:1]}***@{domain}"
+
+
+def email_body(matches: Sequence[ScoredJob], more: int) -> str:
+    """One plain-text digest: each match as in a Telegram message, then the count."""
+    parts = [telegram_text(m) for m in matches]
+    if more:
+        parts.append(f"+{more} more in the app")
+    return "\n\n---\n\n".join(parts)

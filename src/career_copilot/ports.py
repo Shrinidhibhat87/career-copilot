@@ -566,6 +566,8 @@ class NotificationError(RuntimeError):
     MESSAGES: ClassVar[dict[str, str]] = {
         "unreachable": "Telegram could not be reached.",
         "rejected": "Telegram refused the request. Check the bot token.",
+        "mail_unreachable": "The mail server could not be reached.",
+        "mail_rejected": "The mail server refused the login or the message.",
     }
 
     def __init__(self, reason: str) -> None:
