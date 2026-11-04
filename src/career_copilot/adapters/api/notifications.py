@@ -176,7 +176,8 @@ def router(
                 port=int(body.get("port", 0)),
                 user=str(body.get("user", "")).strip(),
                 password=str(body.get("password", "")),
-                to=str(body.get("to", "")).strip(),
+                # Left empty, the digest goes to the same address it is sent from.
+                to=str(body.get("to", "")).strip() or str(body.get("user", "")).strip(),
             )
         except (TypeError, ValueError):
             raise _error(422, "port", "expected a port number") from None

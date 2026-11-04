@@ -41,6 +41,9 @@ def _active_bot(
 
 
 def _matches(config: Config, store: SqliteStore, frozen: RunConfig) -> list[ScoredJob]:
+    # The list in the app caps a remote role abroad far below the bar whatever the model
+    # said, so only jobs the app itself would show are worth a message.
+    shown = store.kept_job_ids(config.scoring.min_match_score)
     return [
         m
         for m in store.match_scores(
@@ -50,8 +53,7 @@ def _matches(config: Config, store: SqliteStore, frozen: RunConfig) -> list[Scor
             max_per_company=frozen.preferences.max_per_company,
             preferences_hash=frozen.preferences_hash,
         )
-        if m.score.score >= config.scoring.min_match_score
-        and store.current_decision(m.job.id) is None
+        if m.job.id in shown and store.current_decision(m.job.id) is None
     ]
 
 
