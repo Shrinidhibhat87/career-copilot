@@ -513,6 +513,16 @@ class SqliteStore:
             "total": total,
         }
 
+    def kept_job_ids(self, threshold: int) -> set[int]:
+        """The ids `review_page` lists at this threshold, without its row limit: what the
+        app calls a recommendation, so a push never names a job the app hides."""
+        rows = self._conn.execute(
+            f"SELECT j.id FROM jobs j {self._CURRENT_SCORES} "
+            f"WHERE j.status = '{JobStatus.ACTIVE}' AND {self._NOT_DISMISSED} AND {self._KEPT}",
+            (threshold,),
+        )
+        return {int(r[0]) for r in rows}
+
     def listed_titles(self, threshold: int, include_below: bool) -> list[tuple[int, str]]:
         """(id, title) of every posting the page lists, saved and applied ones left out.
 

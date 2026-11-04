@@ -231,3 +231,9 @@ def test_the_password_and_address_never_reach_the_database(world: World) -> None
     client.put("/api/notifications", json={"enabled": True, "email": True})
     dump = "\n".join(sqlite3.connect(config.db_path).iterdump())
     assert PASSWORD not in dump and "jane@gmail.com" not in dump
+
+
+def test_the_send_to_address_defaults_to_the_login(world: World) -> None:
+    client, *_ = world
+    body = client.put("/api/notifications/email", json={**MAIL, "to": ""}).json()["email"]
+    assert body["masked"] == "m***@example.com"

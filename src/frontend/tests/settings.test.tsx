@@ -11,6 +11,9 @@ vi.mock("@/components/model-settings", () => ({ ModelSettings: () => null }));
 // The schedule panel has its own tests and endpoints; here it only holds its place.
 vi.mock("@/components/schedule-section", () => ({ ScheduleSection: () => null }));
 
+// The notifications panel has its own tests and endpoints; here it only holds its place.
+vi.mock("@/components/notifications-section", () => ({ NotificationsSection: () => null }));
+
 // The observability panel has its own tests and endpoints; here it only holds its place.
 vi.mock("@/components/observability-section", () => ({
   ObservabilitySection: () => (

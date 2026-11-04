@@ -1205,6 +1205,63 @@ export const saveSchedule = (enabled: boolean, slots: ScheduleSlot[]) =>
     body: JSON.stringify({ enabled, slots }),
   });
 
+// --- notifications (spec 020) -------------------------------------------------
+
+export type NotifyFailure = { message: string; at: string } | null;
+
+/** What the page may know. A token, chat id, address or password is never in it: only a
+ * masked value, and whether each is set. */
+export type NotificationsView = {
+  enabled: boolean;
+  keychain: boolean;
+  telegram: {
+    tokenSet: boolean;
+    paired: boolean;
+    on: boolean;
+    masked: string | null;
+    lastFailure: NotifyFailure;
+  };
+  email: { setUp: boolean; on: boolean; masked: string | null; lastFailure: NotifyFailure };
+};
+
+export type EmailDetails = { host: string; port: number; user: string; password: string; to: string };
+
+async function notifyRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${BASE}/api/notifications${path}`, { cache: "no-store", ...init }).catch(
+    () => {
+      throw new Error("Could not reach the API. Check that it is running.");
+    },
+  );
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as {
+      detail?: { errors?: Record<string, string> };
+    } | null;
+    throw new Error(Object.values(body?.detail?.errors ?? {})[0] ?? "The request failed. Try again.");
+  }
+  return (await response.json()) as T;
+}
+
+const put = (body: unknown): RequestInit => ({
+  method: "PUT",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+});
+
+export const getNotifications = () => notifyRequest<NotificationsView>("");
+export const saveNotifications = (enabled: boolean, telegram: boolean, email: boolean) =>
+  notifyRequest<NotificationsView>("", put({ enabled, telegram, email }));
+/** Saves the bot token and starts pairing: the person sends `code` to the bot `bot`. */
+export const setTelegramToken = (token: string) =>
+  notifyRequest<{ code: string; bot: string }>("/telegram", put({ token }));
+export const getPairing = () => notifyRequest<NotificationsView["telegram"]>("/telegram/pairing");
+export const removeTelegram = () => notifyRequest<NotificationsView>("/telegram", { method: "DELETE" });
+export const testTelegram = () =>
+  notifyRequest<{ ok: boolean; error: string | null }>("/telegram/test", { method: "POST" });
+export const saveEmail = (details: EmailDetails) => notifyRequest<NotificationsView>("/email", put(details));
+export const removeEmail = () => notifyRequest<NotificationsView>("/email", { method: "DELETE" });
+export const testEmail = () =>
+  notifyRequest<{ ok: boolean; error: string | null }>("/email/test", { method: "POST" });
+
 // --- recycle bin -------------------------------------------------------------
 
 /** A dismissed job still in the bin. After `daysLeft` it is cleaned and gone for good. */

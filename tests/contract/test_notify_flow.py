@@ -154,6 +154,23 @@ def test_matches_below_the_bar_and_jobs_already_decided_are_not_sent(
     assert fake.calls == []
 
 
+def test_a_remote_role_abroad_the_app_hides_is_never_pushed(
+    world: tuple[Config, FakeTelegram],
+) -> None:
+    config, fake = world
+    abroad, home = jobs(config, 2)
+    with SqliteStore(config.db_path) as store:
+        store._conn.execute(
+            "UPDATE jobs SET filter_warnings = ? WHERE id = ?",
+            ("remote role with location outside Germany: United Kingdom", abroad),
+        )
+        store._conn.commit()
+        assert abroad not in store.kept_job_ids(45) and home in store.kept_job_ids(45)
+    switch_on(config)
+    push(config, keys(config))
+    assert [c[1]["text"].count("x.test/1") for c in fake.calls] == [1]
+
+
 def test_a_failed_send_is_recorded_without_a_secret_and_retried_next_run(
     world: tuple[Config, FakeTelegram],
 ) -> None:
