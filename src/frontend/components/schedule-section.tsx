@@ -68,6 +68,13 @@ export function ScheduleSection() {
     };
   }, []);
 
+  // "Saved" is a moment's confirmation, not a state to keep.
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setTimeout(() => setSaved(false), 4000);
+    return () => clearTimeout(timer);
+  }, [saved]);
+
   const edit = (change: () => void) => {
     setSaved(false);
     setError("");
