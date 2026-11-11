@@ -11,10 +11,11 @@ import os
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from career_copilot.adapters.api.applications import _NOTION_LOCK, LogFactory, notion_log
+from career_copilot.adapters.export import applications_xlsx
 from career_copilot.adapters.sources.notion import KEY_ENV, NotionError
 from career_copilot.adapters.store.sqlite_store import SqliteStore
 from career_copilot.config import Config
@@ -87,6 +88,18 @@ def router(get_config: Callable[[], Config], log_factory: LogFactory = notion_lo
             "hidden": laid.hidden,
             "staleDays": days,
         }
+
+    @routes.get("/api/pipeline/export.xlsx")
+    def export() -> Response:
+        with SqliteStore(get_config().db_path) as store:
+            cards = store.application_cards(now(), store.stale_days())
+        # Newest change first, hidden and closed included.
+        cards.sort(key=lambda c: str(c["lastChange"]), reverse=True)
+        return Response(
+            applications_xlsx.build(cards),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": 'attachment; filename="applications.xlsx"'},
+        )
 
     @routes.post("/api/pipeline/{job_id}/stage")
     def set_stage(job_id: int, body: StageBody) -> dict[str, object]:

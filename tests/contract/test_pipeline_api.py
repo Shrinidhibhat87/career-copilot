@@ -177,3 +177,23 @@ def test_a_missing_key_is_reported_on_the_card(
     moved = client.post(f"/api/pipeline/{job}/stage", json={"stage": "offer"})
     assert "NOTION_API_KEY" in moved.json()["notionError"]
     assert fake.updates == []
+
+
+def test_the_export_is_a_workbook_with_hidden_and_closed_applications(
+    api: tuple[TestClient, Config, FakeLog],
+) -> None:
+    from io import BytesIO
+
+    from openpyxl import load_workbook
+
+    client, config, _ = api
+    a, b = applied_job(client, config, 1), applied_job(client, config, 2)
+    client.post(f"/api/pipeline/{a}/hide")
+    client.post(f"/api/pipeline/{b}/stage", json={"stage": "rejected"})
+    response = client.get("/api/pipeline/export.xlsx")
+    assert response.status_code == 200
+    assert "spreadsheetml" in response.headers["content-type"]
+    assert "applications.xlsx" in response.headers["content-disposition"]
+    book = load_workbook(BytesIO(response.content))
+    assert len(list(book["Applications"].values)) == 3
+    assert {r[0]: r[1] for r in list(book["Summary"].values)[1:]}["Total"] == 2
