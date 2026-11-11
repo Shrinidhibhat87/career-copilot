@@ -96,6 +96,18 @@ class NotionApplicationLog:
         )
         return NotionResult(str(created["id"]), database_id, page_id, created=True)
 
+    def update(self, page_id: str, status: str, comments: str) -> None:
+        self._send(
+            "PATCH",
+            f"/pages/{page_id}",
+            {
+                "properties": {
+                    "Status": {"select": {"name": status}},
+                    "Comments": {"rich_text": _text(comments)},
+                }
+            },
+        )
+
     # --- finding the database ----------------------------------------------
 
     def _database(self) -> tuple[str, str]:

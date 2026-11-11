@@ -740,6 +740,40 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         );
         """,
     ),
+    (
+        38,
+        """
+        -- Where each application stands after Applied (spec 021). Append-only: the current
+        -- stage is the newest row, so the timeline is the table.
+        CREATE TABLE application_stages (
+            id     INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id INTEGER NOT NULL,
+            stage  TEXT NOT NULL,
+            note   TEXT,
+            at     TEXT NOT NULL
+        );
+        CREATE INDEX idx_stages_job ON application_stages (job_id, id DESC);
+        -- The person's own note, whether the card is hidden, and the last failed Notion
+        -- mirror (fixed text, cleared by the next success).
+        CREATE TABLE application_cards (
+            job_id       INTEGER PRIMARY KEY,
+            note         TEXT NOT NULL DEFAULT '',
+            hidden       INTEGER NOT NULL DEFAULT 0,
+            notion_error TEXT,
+            updated_at   TEXT NOT NULL
+        );
+        CREATE TABLE application_settings (
+            id         INTEGER PRIMARY KEY CHECK (id = 1),
+            stale_days INTEGER NOT NULL
+        );
+        -- Every job whose newest decision is `applied` starts on the board as applied.
+        INSERT INTO application_stages (job_id, stage, note, at)
+        SELECT d.job_id, 'applied', NULL, d.created_at
+        FROM job_decisions d
+        WHERE d.decision = 'applied'
+          AND d.id = (SELECT MAX(id) FROM job_decisions WHERE job_id = d.job_id);
+        """,
+    ),
 )
 
 

@@ -21,7 +21,7 @@ def test_migration_37_adds_the_tables_to_an_existing_database(tmp_path: Path) ->
             conn.executescript(sql)
             conn.execute("INSERT INTO schema_migrations VALUES (?)", (version,))
     conn.commit()
-    assert migrate(conn) == 37
+    assert migrate(conn) == 38
     tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     assert {"notification_settings", "notified_jobs", "telegram_state"} <= tables
 

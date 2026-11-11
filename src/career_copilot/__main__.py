@@ -23,6 +23,7 @@ from career_copilot.adapters.store.sqlite_store import SqliteStore, process_star
 from career_copilot.config import Config, resolve_models
 from career_copilot.domain.models import FilterOutcome
 from career_copilot.domain.notifications import mask_chat, mask_email
+from career_copilot.domain.pipeline import CLOSED
 from career_copilot.domain.runs import RunInProgress
 from career_copilot.usecases.compare_backends import compare as compare_exports
 from career_copilot.usecases.compare_backends import export_top
@@ -341,6 +342,7 @@ def doctor(
     _report_markets(config)
     _report_schedule(config)
     _report_notifications(config)
+    _report_applications(config)
     _report_sources(config)
     if not (report.ok and cv_ok):
         raise typer.Exit(code=1)
@@ -374,6 +376,14 @@ def _report_notifications(config: Config) -> None:
     mail = EmailSettings.load(default_secrets().get(email_name(account_of(config))))
     mail_on = bool(saved and saved.enabled and saved.email and mail)
     typer.echo(f"--   email {f'on ({mask_email(mail.to)})' if mail_on and mail else 'off'}")
+
+
+def _report_applications(config: Config) -> None:
+    """How many applications are still alive and how many are closed (spec 021)."""
+    with SqliteStore(config.db_path) as store:
+        cards = store.application_cards(_now(), store.stale_days())
+    closed = sum(1 for c in cards if c["stage"] in CLOSED)
+    typer.echo(f"--   applications {len(cards) - closed} open, {closed} closed")
 
 
 def _report_sources(config: Config) -> None:

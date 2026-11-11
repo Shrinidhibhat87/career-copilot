@@ -240,3 +240,16 @@ def test_every_request_carries_the_key_and_pinned_version() -> None:
     ).record(entry())
     assert {r.headers["Authorization"] for r in seen} == {"Bearer secret"}
     assert {r.headers["Notion-Version"] for r in seen} == {"2022-06-28"}
+
+
+def test_update_patches_only_status_and_comments() -> None:
+    fake = FakeNotion()
+    fake.routes[("PATCH", "/v1/pages/row-1")] = lambda _: httpx.Response(200, json={"id": "row-1"})
+    log(fake).update("row-1", "Interviewing", "Call Anna")
+    [body] = fake.bodies("PATCH", "/v1/pages/row-1")
+    assert body == {
+        "properties": {
+            "Status": {"select": {"name": "Interviewing"}},
+            "Comments": {"rich_text": [{"type": "text", "text": {"content": "Call Anna"}}]},
+        }
+    }

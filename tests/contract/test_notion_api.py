@@ -39,6 +39,9 @@ class FakeLog:
         self.entries.append(entry)
         return NotionResult(f"row-{entry.index}", "db-1", "parent-1", created=True)
 
+    def update(self, page_id: str, status: str, comments: str) -> None:
+        raise AssertionError("adding a row never updates one")
+
 
 @pytest.fixture
 def api(
