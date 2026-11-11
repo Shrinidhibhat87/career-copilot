@@ -34,6 +34,7 @@ from career_copilot.domain.models import (
     UpsertOutcome,
 )
 from career_copilot.domain.notifications import Notifications
+from career_copilot.domain.pipeline import DEFAULT_STALE_DAYS, days_quiet, is_stale
 from career_copilot.domain.preference_note import DecisionSignal
 from career_copilot.domain.preferences import Preferences
 from career_copilot.domain.runs import Progress, RunConfig, RunInProgress, stalled
@@ -723,6 +724,12 @@ class SqliteStore:
             "INSERT OR IGNORE INTO job_views (job_id, viewed_at) VALUES (?, ?)",
             (job_id, now.isoformat()),
         )
+        # A first Applied starts the pipeline; applying again resumes where it stood.
+        if decision == "applied" and self.application_stage(job_id) is None:
+            self._conn.execute(
+                "INSERT INTO application_stages (job_id, stage, note, at) VALUES (?,?,?,?)",
+                (job_id, "applied", None, now.isoformat()),
+            )
         return int(cur.lastrowid or 0)
 
     def decision_signals(self, limit: int = 40) -> Sequence[DecisionSignal]:
@@ -2649,6 +2656,124 @@ class SqliteStore:
         self._conn.execute(
             "INSERT INTO applications (id, job_id, notion_page_id, created_at) VALUES (?,?,?,?)",
             (index, job_id, page_id, now.isoformat()),
+        )
+        self._conn.commit()
+
+    # --- application pipeline (spec 021) ----------------------------------
+
+    def application_stage(self, job_id: int) -> tuple[str, datetime] | None:
+        """The newest stage of a job and when it was set, or None before it was applied."""
+        row = self._conn.execute(
+            "SELECT stage, at FROM application_stages WHERE job_id = ? ORDER BY id DESC LIMIT 1",
+            (job_id,),
+        ).fetchone()
+        return (row["stage"], datetime.fromisoformat(row["at"])) if row else None
+
+    def record_stage(self, job_id: int, stage: str, note: str | None, now: datetime) -> None:
+        """Append one stage. Raises LookupError unless the job is applied right now."""
+        if self.current_decision(job_id) != "applied":
+            raise LookupError(f"job {job_id} is not applied")
+        self._conn.execute(
+            "INSERT INTO application_stages (job_id, stage, note, at) VALUES (?,?,?,?)",
+            (job_id, stage, note or None, now.isoformat()),
+        )
+        self._touch_card(job_id, now)
+        self._conn.commit()
+
+    def stage_timeline(self, job_id: int) -> list[dict[str, object]]:
+        rows = self._conn.execute(
+            "SELECT stage, note, at FROM application_stages WHERE job_id = ? ORDER BY id",
+            (job_id,),
+        ).fetchall()
+        return [{"stage": r["stage"], "note": r["note"], "at": r["at"]} for r in rows]
+
+    def _touch_card(self, job_id: int, now: datetime) -> None:
+        self._conn.execute(
+            "INSERT INTO application_cards (job_id, updated_at) VALUES (?, ?) "
+            "ON CONFLICT (job_id) DO UPDATE SET updated_at = excluded.updated_at",
+            (job_id, now.isoformat()),
+        )
+
+    def set_card_note(self, job_id: int, note: str, now: datetime) -> None:
+        self._touch_card(job_id, now)
+        self._conn.execute("UPDATE application_cards SET note = ? WHERE job_id = ?", (note, job_id))
+        self._conn.commit()
+
+    def set_card_hidden(self, job_id: int, hidden: bool, now: datetime) -> None:
+        self._touch_card(job_id, now)
+        self._conn.execute(
+            "UPDATE application_cards SET hidden = ? WHERE job_id = ?", (int(hidden), job_id)
+        )
+        self._conn.commit()
+
+    def set_card_notion_error(self, job_id: int, message: str | None, now: datetime) -> None:
+        self._touch_card(job_id, now)
+        self._conn.execute(
+            "UPDATE application_cards SET notion_error = ? WHERE job_id = ?", (message, job_id)
+        )
+        self._conn.commit()
+
+    def application_page(self, job_id: int) -> str | None:
+        """The Notion page of this job's row, or None when it was never added."""
+        row = self._conn.execute(
+            "SELECT notion_page_id FROM applications WHERE job_id = ?", (job_id,)
+        ).fetchone()
+        return str(row[0]) if row else None
+
+    def application_cards(self, now: datetime, stale_days: int) -> list[dict[str, object]]:
+        """One card per job that is applied right now, hidden ones included."""
+        ids = [
+            r[0]
+            for r in self._conn.execute(
+                "SELECT j.id FROM jobs j WHERE j.tombstoned_at IS NULL AND (SELECT decision "
+                "FROM job_decisions WHERE job_id = j.id ORDER BY id DESC LIMIT 1) = 'applied'"
+            )
+        ]
+        cards: list[dict[str, object]] = []
+        for job_id in ids:
+            detail = self.job_detail(job_id)
+            stage = self.application_stage(job_id)
+            if detail is None or stage is None:
+                continue
+            extra = self._conn.execute(
+                "SELECT note, hidden, notion_error FROM application_cards WHERE job_id = ?",
+                (job_id,),
+            ).fetchone()
+            first = self._conn.execute(
+                "SELECT MIN(at) FROM application_stages WHERE job_id = ?", (job_id,)
+            ).fetchone()[0]
+            current, changed = stage
+            cards.append(
+                {
+                    "jobId": job_id,
+                    "title": detail["title"],
+                    "company": detail["company"],
+                    "location": detail["location"],
+                    "source": detail["source"],
+                    "url": detail["url"],
+                    "score": detail["score"],
+                    "stage": current,
+                    "appliedOn": first,
+                    "lastChange": changed.isoformat(),
+                    "daysQuiet": days_quiet(changed, now),
+                    "stale": is_stale(current, changed, now, stale_days),
+                    "note": extra["note"] if extra else "",
+                    "hidden": bool(extra and extra["hidden"]),
+                    "notionError": extra["notion_error"] if extra else None,
+                    "inNotion": self.application_page(job_id) is not None,
+                }
+            )
+        return cards
+
+    def stale_days(self) -> int:
+        row = self._conn.execute("SELECT stale_days FROM application_settings").fetchone()
+        return int(row[0]) if row else DEFAULT_STALE_DAYS
+
+    def set_stale_days(self, days: int) -> None:
+        self._conn.execute(
+            "INSERT INTO application_settings (id, stale_days) VALUES (1, ?) "
+            "ON CONFLICT (id) DO UPDATE SET stale_days = excluded.stale_days",
+            (days,),
         )
         self._conn.commit()
 

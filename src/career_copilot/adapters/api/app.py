@@ -35,6 +35,7 @@ from career_copilot.adapters.api import (
     notifications,
     observability,
     outline,
+    pipeline,
     recycle_bin,
     review,
     runs,
@@ -147,6 +148,7 @@ app.include_router(outline.router(_in_force))
 app.include_router(assistant.router(_in_force, on_refresh=runs.request_refresh))
 app.include_router(recycle_bin.router(lambda: _user_config()))
 app.include_router(applications.router(lambda: _user_config()))
+app.include_router(pipeline.router(lambda: _user_config()))
 app.include_router(company_lists.router(lambda: _user_config()))
 app.include_router(source_lookup.router(_in_force, web_search=source_lookup.agent_search))
 app.include_router(intent.router(_in_force, on_change=runs.request_refresh))
