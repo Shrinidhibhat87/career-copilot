@@ -5,11 +5,12 @@ import { AutoRefresh } from "@/components/auto-refresh";
 
 // "sign-in" and "resume" have no tab: Profile lives in the account menu, and the sign-in
 // page is where nobody is signed in yet.
-type Step = "sign-in" | "resume" | "preferences" | "review" | "settings";
+type Step = "sign-in" | "resume" | "preferences" | "review" | "applications" | "settings";
 
 const tabs = [
   { id: "preferences", label: "PREFERENCES", href: "/preferences" },
   { id: "review", label: "RECOMMENDATIONS", href: "/recommendations" },
+  { id: "applications", label: "APPLICATIONS", href: "/applications" },
   { id: "settings", label: "SETTINGS", href: "/settings" },
 ] as const;
 

@@ -1294,6 +1294,71 @@ export async function deleteForever(jobId: number): Promise<void> {
   if (!response.ok) throw new Error("The request failed. Try again.");
 }
 
+// --- application pipeline (spec 021) --------------------------------------------------
+
+export type Stage = "applied" | "interviewing" | "offer" | "rejected" | "withdrawn";
+
+export const STAGE_LABELS: Record<Stage, string> = {
+  applied: "Applied",
+  interviewing: "Interviewing",
+  offer: "Offer",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
+};
+
+/** One applied job. `lastChange` is when its stage last moved; `notionError` is the last
+ * failed update of its Notion row, shown on the card and cleared by the next success. */
+export type PipelineCard = {
+  jobId: number;
+  title: string;
+  company: string;
+  location: string;
+  url: string;
+  stage: Stage;
+  appliedOn: string;
+  lastChange: string;
+  daysQuiet: number;
+  stale: boolean;
+  note: string;
+  hidden: boolean;
+  notionError: string | null;
+  inNotion: boolean;
+};
+
+export type Pipeline = {
+  applied: PipelineCard[];
+  interviewing: PipelineCard[];
+  closed: { offers: PipelineCard[]; folded: PipelineCard[] };
+  hidden: PipelineCard[];
+  staleDays: number;
+};
+
+export type TimelineEntry = { stage: Stage; note: string | null; at: string };
+
+const jsonInit = (body?: unknown): RequestInit => ({
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: body === undefined ? undefined : JSON.stringify(body),
+});
+
+export const getPipeline = () => reviewRequest<Pipeline>("pipeline");
+export const setStage = (jobId: number, stage: Stage) =>
+  reviewRequest<PipelineCard>(`pipeline/${jobId}/stage`, jsonInit({ stage }));
+export const saveCardNote = (jobId: number, note: string) =>
+  reviewRequest<PipelineCard>(`pipeline/${jobId}/note`, { ...jsonInit({ note }), method: "PUT" });
+export const hideCard = (jobId: number) =>
+  reviewRequest<PipelineCard>(`pipeline/${jobId}/hide`, jsonInit());
+export const unhideCard = (jobId: number) =>
+  reviewRequest<PipelineCard>(`pipeline/${jobId}/unhide`, jsonInit());
+export const getTimeline = (jobId: number) =>
+  reviewRequest<TimelineEntry[]>(`pipeline/${jobId}/timeline`);
+export const saveStaleDays = (staleDays: number) =>
+  reviewRequest<{ staleDays: number }>("pipeline/settings", {
+    ...jsonInit({ staleDays }),
+    method: "PUT",
+  });
+export const PIPELINE_EXPORT_URL = `${BASE}/api/pipeline/export.xlsx`;
+
 // --- model settings (spec 014) ---------------------------------------------------------
 
 export type Preset = "local" | "cloud" | "hybrid";
