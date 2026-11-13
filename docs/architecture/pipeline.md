@@ -73,6 +73,6 @@ silently failed scrape is never read as "no jobs today".
 ## Application tracking
 
 Saving (✓), dismissing (✕) and marking applied are decisions in `job_decisions`;
-`applications` holds the applied jobs. When a Notion Applications database is
-configured, `ApplicationLog` mirrors each applied job there. The same Notion
+`applications` holds the applied jobs. What happens after applying (stages, the board,
+the Notion mirror, Excel) is in [applications](applications.md). The same Notion
 integration can also feed a company watchlist.
