@@ -62,7 +62,7 @@ One SQLite file per account, `data/users/<name>/jobs.db` (spec 015), with number
 |---|---|
 | Jobs | `jobs`, `job_versions`, `job_embeddings`, `job_outlines`, `company_aliases` |
 | Scores | `scores`, `reviews`, `corrections`, `feedback_entries` |
-| Lifecycle | `job_decisions`, `job_views`, `applications`, `notion_database` |
+| Lifecycle | `job_decisions`, `job_views`, `applications`, `notion_database`, `application_stages`, `application_cards`, `application_settings` |
 | Sources | `source_targets`, `source_runs`, `source_proposals`, `cooldowns`, `import_companies`, `source_health`, `market_settings` |
 | Profile | `cv_versions`, `preferences`, `intent_entries`, `sample_roles`, `search_profiles` |
 | Runs | `runs`, `llm_calls`, `llm_daily`, `tool_calls`, `tool_daily`, `app_sessions` |
