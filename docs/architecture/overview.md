@@ -18,7 +18,7 @@ vendor, a second backend. Everything else is a plain injected object.
 | `JobSource` | `fetch(target) -> Iterable[RawJob]` | ATS boards: Greenhouse, Lever, Ashby, Workable, Recruitee, SmartRecruiters, Personio, Teamtailor (`adapters/sources/ats.py`, per-host `HostThrottle`) |
 | `StateStore` | jobs, scores, runs, cooldowns | SQLite file (`adapters/store/sqlite_store.py`) |
 | `LLMClient` | `complete(prompt, schema, system, validator) -> LLMResponse` | `LiteLLMClient` (Ollama, vLLM, OpenRouter), `RedactingLLMClient` in front of it, `FakeLLM` (tests) |
-| `Notifier` | `deliver(title, body)` | `MarkdownNotifier` (digest file); the review UI reads the store directly |
+| `Notifier` | `deliver(title, body)` | `MarkdownNotifier` (digest file), Telegram and email (`adapters/notify/`, see [operations](operations.md)); the review UI reads the store directly |
 
 Later features add narrow ports beside these, each with a fake or a second backend:
 `PreferencesStore`, `CvStore`, `IntentStore`, `SampleRoleStore`, `SearchProfileStore`,

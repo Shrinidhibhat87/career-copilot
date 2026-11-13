@@ -46,8 +46,20 @@ single most important test in the suite.
 
 Local only. One idempotent command, `career-copilot run` (or `ui`), against a SQLite
 file; secrets come from `.env`. The model side is the only part that varies per machine,
-and it is configuration (see Model deployment). A hosted or scheduled runner is not
-built; the port boundaries leave the slot open.
+and it is configuration (see Model deployment). There is no hosted runner; the port
+boundaries leave the slot open.
+
+## Schedule and push
+
+Both are off until a person turns them on in Settings, and both need the app running and
+signed in (spec 019, spec 020).
+
+| Part | Behaviour |
+|---|---|
+| Schedule | Up to four on-or-off slots a day, on the hour or half hour, local time. A ticker thread in the `ui` server checks each minute and starts a normal run; a slot missed while the app was closed or asleep runs once at the next sign-in. It skips when a run is active, a role is billed, no CV exists or the backend is down, and says why. Runs record `trigger`: `manual` or `scheduled`. |
+| Telegram | After a run, up to 5 new matches above `min_match_score`, one message each with 👍 Interested (saves) and 👎 Not interested (dismisses). Replies come by long-polling, so no webhook or open port. |
+| Email | One digest per run through the person's own SMTP. |
+| Secrets | Bot token, chat ID and SMTP credentials live in the OS keychain (`adapters/secrets.py`), never in `jobs.db`, config, exports or logs. |
 
 ## Security and PII
 
@@ -71,4 +83,6 @@ pseudonymous, not anonymous. See [`PII_HANDLING.md`](../../PII_HANDLING.md).
 | Budget exceeded | Abort run loudly, record reason, no partial silent spend |
 | Duplicate across sources | Fingerprint match, `last_seen_at` updated, no rescore |
 | Ambiguous eligibility wording | `manual_review`, surfaced in the review screen |
+| Notification send fails | The run is not failed; the category and message (no secret) show in Settings and the send retries at the next scheduled run |
+| Scheduled slot cannot run | Skipped with its reason on the Settings page, retried after 15 minutes; a billed role never runs unattended |
 | Run left in `running` | Blocks the next run with "a run is already active" |

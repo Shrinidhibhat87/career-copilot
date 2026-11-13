@@ -18,7 +18,9 @@ For the order a run executes in and how the discovery agent calls its tools, see
 |---|---|
 | [Overview](architecture/overview.md) | hexagonal style, the four core ports, layers |
 | [Agents](architecture/agents.md) | which steps are model-driven, their tools and output contracts |
+| [Sources and markets](architecture/sources.md) | ATS and national boards, market packs, source health and pause |
 | [Pipeline and data](architecture/pipeline.md) | collection ladder, dedupe, scoring, data model, application tracking |
+| [Applications](architecture/applications.md) | stages, board, Notion mirror, Excel |
 | [Operations](architecture/operations.md) | model hosting, testing, runtime, security and PII, failure modes |
 
 ## Spec map
@@ -41,3 +43,8 @@ For the order a run executes in and how the discovery agent calls its tools, see
 | 014-cloud-backend | OpenRouter key in Settings, Local / Cloud / Hybrid presets, model catalog |
 | 015-accounts | one folder and `jobs.db` per person, sign-in, `--user` on the CLI |
 | 016-recommendation-improvement | stricter scoring, learning from saves and dismissals, repost memory, company-name lookup |
+| 017-source-health | per-source pause after repeated failures, status and test in Settings |
+| 018-market-packs | markets per account, the national sources and location rules they turn on |
+| 019-scheduler | run slots with one catch-up after a missed slot |
+| 020-notifications | Telegram and email digests, keychain credentials |
+| 021-application-pipeline | stages, board, quiet badge, Notion status mirror, Excel export |

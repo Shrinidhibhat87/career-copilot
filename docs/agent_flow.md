@@ -17,7 +17,9 @@ See [overview](architecture/overview.md).
 
 `discover`, then `profile`, `score`, `digest` (`usecases/pipeline.py`). Collection,
 dedupe, filtering and ranking are deterministic; only the match step calls a model, and
-every call goes through the PII redactor. See [pipeline](architecture/pipeline.md).
+every call goes through the PII redactor. A run starts from a click, the CLI or a schedule
+slot, and can push new matches to Telegram or email afterwards. See
+[pipeline](architecture/pipeline.md) and [operations](architecture/operations.md).
 
 ## 3. Discovery agent
 
