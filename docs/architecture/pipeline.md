@@ -15,13 +15,15 @@ early picks up where the last one left off.
 | Input | Source | Cost |
 |---|---|---|
 | `targets:` / `source_targets` | ATS board APIs, 8 vendors, public, no login | free |
+| Enabled markets | national board searches built from saved preferences (`jobsuche`) | free |
 | Company lists | Notion database or CSV, resolved by deterministic board probing | free |
 | `DiscoveryAgent` | web search + ATS probe, proposes boards | LLM + search, budget-gated |
 
 The run stops once `stop_after` new qualifying jobs are found (`initial_target` while
 the store is empty); one target adds at most `max_jobs_per_target` postings. A target
 in cooldown is skipped; a failing fetch is recorded in `source_runs` and gets a longer
-cooldown, never counted as zero jobs. A host that answers 429 is throttled per host.
+cooldown, never counted as zero jobs. A host that answers 429 is throttled per host; a
+source that keeps failing is paused as a whole ([sources](sources.md)).
 
 ## Dedupe
 
@@ -61,7 +63,7 @@ One SQLite file per account, `data/users/<name>/jobs.db` (spec 015), with number
 | Jobs | `jobs`, `job_versions`, `job_embeddings`, `job_outlines`, `company_aliases` |
 | Scores | `scores`, `reviews`, `corrections`, `feedback_entries` |
 | Lifecycle | `job_decisions`, `job_views`, `applications`, `notion_database` |
-| Sources | `source_targets`, `source_runs`, `source_proposals`, `cooldowns`, `import_companies` |
+| Sources | `source_targets`, `source_runs`, `source_proposals`, `cooldowns`, `import_companies`, `source_health`, `market_settings` |
 | Profile | `cv_versions`, `preferences`, `intent_entries`, `sample_roles`, `search_profiles` |
 | Runs | `runs`, `llm_calls`, `llm_daily`, `tool_calls`, `tool_daily`, `app_sessions` |
 
