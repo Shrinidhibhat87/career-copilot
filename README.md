@@ -10,9 +10,10 @@
 ![vLLM](https://img.shields.io/badge/vLLM-30A2FF?logo=vllm&logoColor=white)
 ![OpenRouter](https://img.shields.io/badge/OpenRouter-6467F2?logoColor=white)
 
-A personal job-search agent. It discovers postings from ATS boards, hard-filters them,
-scores the survivors with LLMs, and renders a ranked digest. It recommends roles; it
-never submits an application.
+A personal job-search agent. It discovers postings from ATS boards and the German federal
+job board, hard-filters them, scores the survivors with LLMs, and renders a ranked digest,
+on a schedule and pushed to Telegram or email if you want. It recommends roles and tracks
+your applications on a board; it never submits one.
 
 ## Quick start
 
@@ -94,6 +95,9 @@ cd src/frontend && npm run lint && npm run typecheck && npm run test
 ## Docs
 
 - [`docs/architecture.md`](docs/architecture.md) — design and components
+- [`docs/architecture/sources.md`](docs/architecture/sources.md) — sources, markets, source health
+- [`docs/architecture/applications.md`](docs/architecture/applications.md) — application board and Excel export
+- [`docs/architecture/operations.md`](docs/architecture/operations.md) — schedule, push, security
 - [`docs/job_search_agent_plan.md`](docs/job_search_agent_plan.md) — goals and scope
 - [`deploy/README.md`](deploy/README.md) — running models locally (Ollama, vLLM)
 - [`PII_HANDLING.md`](PII_HANDLING.md) — redaction boundary
