@@ -15,7 +15,7 @@ vendor, a second backend. Everything else is a plain injected object.
 
 | Port | Contract | Adapters |
 |---|---|---|
-| `JobSource` | `fetch(target) -> Iterable[RawJob]` | ATS boards: Greenhouse, Lever, Ashby, Workable, Recruitee, SmartRecruiters, Personio, Teamtailor (`adapters/sources/ats.py`, per-host `HostThrottle`) |
+| `JobSource` | `fetch(target) -> Iterable[RawJob]` | ATS boards: Greenhouse, Lever, Ashby, Workable, Recruitee, SmartRecruiters, Personio, Teamtailor (`adapters/sources/ats.py`, per-host `HostThrottle`); the German federal board (`jobsuche.py`). See [sources](sources.md) |
 | `StateStore` | jobs, scores, runs, cooldowns | SQLite file (`adapters/store/sqlite_store.py`) |
 | `LLMClient` | `complete(prompt, schema, system, validator) -> LLMResponse` | `LiteLLMClient` (Ollama, vLLM, OpenRouter), `RedactingLLMClient` in front of it, `FakeLLM` (tests) |
 | `Notifier` | `deliver(title, body)` | `MarkdownNotifier` (digest file); the review UI reads the store directly |
